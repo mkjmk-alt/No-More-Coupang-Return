@@ -51,24 +51,9 @@ export class BarcodeScanner {
                 formatsToSupport: SUPPORTED_FORMATS
             });
 
-            const cameras = await Html5Qrcode.getCameras();
-
-            if (cameras.length === 0) {
-                onError?.('카메라를 찾을 수 없습니다.');
-                return;
-            }
-
-            // Prefer back camera
-            const backCamera = cameras.find(c =>
-                c.label.toLowerCase().includes('back') ||
-                c.label.toLowerCase().includes('rear') ||
-                c.label.toLowerCase().includes('environment')
-            );
-
-            const cameraId = backCamera?.id || cameras[0].id;
-
+            // Use facingMode constraint for back camera (environment = back, user = front)
             await this.html5QrCode.start(
-                cameraId,
+                { facingMode: "environment" },
                 {
                     fps: 10,
                     qrbox: { width: 250, height: 250 },
