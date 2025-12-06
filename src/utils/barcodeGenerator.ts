@@ -1,5 +1,6 @@
 import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
+import { jsPDF } from 'jspdf';
 
 export type BarcodeType = 'CODE128' | 'EAN13' | 'EAN8' | 'CODE39' | 'QR';
 
@@ -224,4 +225,136 @@ export function downloadImage(dataUrl: string, filename: string): void {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// PDF A4 Sheet Options (all measurements in mm)
+export interface A4SheetPDFOptions {
+    rows: number;
+    cols: number;
+    labelWidth: number;  // in mm (LS-3102: 47mm)
+    labelHeight: number; // in mm (LS-3102: 26.9mm)
+    leftMargin: number;  // in mm
+    topMargin: number;   // in mm
+    hGap: number;        // horizontal gap between labels in mm
+    vGap: number;        // vertical gap between labels in mm
+    productName: string;
+    labelFontSize: number;
+    expiryFontSize: number;
+    addExpiry: boolean;
+    expiryText: string;
+}
+
+// LS-3102 preset
+export const LS_3102_PRESET: Partial<A4SheetPDFOptions> = {
+    rows: 10,
+    cols: 4,
+    labelWidth: 47,
+    labelHeight: 26.9,
+    leftMargin: 8,
+    topMargin: 11,
+    hGap: 2.5,
+    vGap: 0
+};
+
+// Create A4 PDF with barcodes (mm-based for accurate printing)
+export async function createA4SheetPDF(
+    barcodeDataUrl: string,
+    options: A4SheetPDFOptions
+): Promise<void> {
+    const {
+        rows,
+        cols,
+        labelWidth,
+        labelHeight,
+        leftMargin,
+        topMargin,
+        hGap,
+        vGap,
+        productName,
+        labelFontSize,
+        expiryFontSize,
+        addExpiry,
+        expiryText
+    } = options;
+
+    // Create PDF (A4 portrait, mm units)
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    // Load barcode image
+    const barcodeImg = await loadImageForPDF(barcodeDataUrl);
+    if (!barcodeImg) return;
+
+    // Text padding
+    const TEXT_PADDING = 1.5; // mm
+    const CONTENT_SPACING = 1; // mm
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const labelX = leftMargin + c * (labelWidth + hGap);
+            const labelY = topMargin + r * (labelHeight + vGap);
+
+            // Draw product name
+            pdf.setFontSize(labelFontSize);
+            pdf.setFont('helvetica', 'normal');
+
+            const maxTextWidth = labelWidth - 2 * TEXT_PADDING;
+            const productLines = pdf.splitTextToSize(productName, maxTextWidth);
+            const lineHeight = labelFontSize * 0.35; // mm per line
+
+            let yCursor = labelY + TEXT_PADDING + labelFontSize * 0.35;
+            const maxProductLines = 2;
+            const linesToDraw = productLines.slice(0, maxProductLines);
+
+            for (const line of linesToDraw) {
+                pdf.text(line, labelX + labelWidth / 2, yCursor, { align: 'center' });
+                yCursor += lineHeight;
+            }
+
+            // Draw expiry date if enabled
+            if (addExpiry && expiryText) {
+                pdf.setFontSize(expiryFontSize);
+                yCursor += CONTENT_SPACING;
+                const expiryLine = `소비기한 : ${expiryText}`;
+                pdf.text(expiryLine, labelX + labelWidth - TEXT_PADDING, yCursor, { align: 'right' });
+                yCursor += expiryFontSize * 0.35;
+            }
+
+            // Draw barcode
+            const barcodeAreaY = yCursor + CONTENT_SPACING;
+            const barcodeAreaH = (labelY + labelHeight) - barcodeAreaY - TEXT_PADDING;
+
+            if (barcodeAreaH > 3) {
+                const aspectRatio = barcodeImg.height / barcodeImg.width;
+                let barcodeW = labelWidth - 2 * TEXT_PADDING;
+                let barcodeH = barcodeW * aspectRatio;
+
+                if (barcodeH > barcodeAreaH) {
+                    barcodeH = barcodeAreaH;
+                    barcodeW = barcodeH / aspectRatio;
+                }
+
+                const barcodeX = labelX + (labelWidth - barcodeW) / 2;
+                const barcodeY = barcodeAreaY + (barcodeAreaH - barcodeH) / 2;
+
+                pdf.addImage(barcodeDataUrl, 'PNG', barcodeX, barcodeY, barcodeW, barcodeH);
+            }
+        }
+    }
+
+    // Download PDF
+    pdf.save('barcode_a4_sheet.pdf');
+}
+
+// Load image for PDF dimension calculation
+function loadImageForPDF(src: string): Promise<HTMLImageElement | null> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
 }

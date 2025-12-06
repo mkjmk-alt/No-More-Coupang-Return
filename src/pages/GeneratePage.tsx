@@ -2,9 +2,11 @@ import { useState } from 'react';
 import {
     generateBarcode,
     createA4Sheet,
-    downloadImage
+    createA4SheetPDF,
+    downloadImage,
+    LS_3102_PRESET
 } from '../utils/barcodeGenerator';
-import type { BarcodeType, A4SheetOptions } from '../utils/barcodeGenerator';
+import type { BarcodeType, A4SheetOptions, A4SheetPDFOptions } from '../utils/barcodeGenerator';
 import { removeWhitespaceSpecial } from '../utils/helpers';
 import './GeneratePage.css';
 
@@ -94,6 +96,37 @@ export function GeneratePage() {
             const content = removeSpecial ? removeWhitespaceSpecial(inputText) : inputText;
             downloadImage(sheetDataUrl, `barcode_sheet_${content}_${rows}x${cols}.png`);
         }
+    };
+
+    const handleCreateA4SheetPDF = async () => {
+        if (!barcodeImage) {
+            setError('먼저 바코드를 생성해주세요.');
+            return;
+        }
+
+        if (!productName.trim()) {
+            setError('상품명을 입력해주세요.');
+            return;
+        }
+
+        const pdfOptions: A4SheetPDFOptions = {
+            ...LS_3102_PRESET,
+            rows,
+            cols,
+            labelWidth: LS_3102_PRESET.labelWidth || 47,
+            labelHeight: LS_3102_PRESET.labelHeight || 26.9,
+            leftMargin: LS_3102_PRESET.leftMargin || 8,
+            topMargin: LS_3102_PRESET.topMargin || 11,
+            hGap: LS_3102_PRESET.hGap || 2.5,
+            vGap: LS_3102_PRESET.vGap || 0,
+            productName,
+            labelFontSize: labelFontSize / 3, // Convert to mm (roughly)
+            expiryFontSize: expiryFontSize / 3,
+            addExpiry,
+            expiryText
+        };
+
+        await createA4SheetPDF(barcodeImage, pdfOptions);
     };
 
     return (
@@ -314,7 +347,10 @@ export function GeneratePage() {
                             이미지 다운로드
                         </button>
                         <button className="btn btn-outline" onClick={handleCreateA4Sheet}>
-                            A4 시트 생성
+                            A4 시트 (PNG)
+                        </button>
+                        <button className="btn btn-primary" onClick={handleCreateA4SheetPDF}>
+                            📄 PDF 다운로드 (LS-3102)
                         </button>
                     </>
                 )}
