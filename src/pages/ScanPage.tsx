@@ -22,6 +22,7 @@ export function ScanPage() {
     const [normalizedBarcodeImage, setNormalizedBarcodeImage] = useState<string | null>(null);
     const [error, setError] = useState<string>('');
     const [historyRefresh, setHistoryRefresh] = useState(0);
+    const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
     // A4 Sheet options
     const [showA4Options, setShowA4Options] = useState(false);
@@ -108,9 +109,11 @@ export function ScanPage() {
         setScanResult(null);
         setBarcodeImage(null);
         setNormalizedBarcodeImage(null);
+        setUploadedImage(null);
 
         const result = await scanImageFile(file);
         if (result) {
+            setUploadedImage(result.resizedImageUrl);
             handleScanResult(result);
         } else {
             setError('바코드 또는 QR코드를 인식하지 못했습니다. 다른 이미지를 시도해 보세요.');
@@ -268,6 +271,13 @@ export function ScanPage() {
                             <code>{normalizedResult}</code>
                         </div>
                     </div>
+
+                    {uploadedImage && (
+                        <div className="barcode-preview mt-2">
+                            <label className="label">📷 업로드된 이미지 (리사이즈됨)</label>
+                            <img src={uploadedImage} alt="Uploaded and resized" />
+                        </div>
+                    )}
 
                     {barcodeImage && (
                         <div className="barcode-preview mt-2">

@@ -5,6 +5,10 @@ export interface ScanResult {
     format: string;
 }
 
+export interface ImageScanResult extends ScanResult {
+    resizedImageUrl: string;
+}
+
 // Check if native BarcodeDetector API is available
 declare global {
     interface Window {
@@ -236,9 +240,9 @@ export function createScanner(containerId: string): NativeBarcodeScanner | Barco
     }
 }
 
-export async function scanImageFile(file: File): Promise<ScanResult | null> {
+export async function scanImageFile(file: File): Promise<ImageScanResult | null> {
     // Resize image for better performance on mobile
-    const resizedBlob = await resizeImageForScanning(file);
+    const { blob: resizedBlob, dataUrl: resizedImageUrl } = await resizeImageForScanning(file);
 
     // Try native BarcodeDetector first
     if (isNativeBarcodeDetectorSupported()) {
@@ -250,7 +254,8 @@ export async function scanImageFile(file: File): Promise<ScanResult | null> {
             if (barcodes.length > 0) {
                 return {
                     text: barcodes[0].rawValue,
-                    format: barcodes[0].format.toUpperCase()
+                    format: barcodes[0].format.toUpperCase(),
+                    resizedImageUrl
                 };
             }
         } catch (error) {
@@ -275,7 +280,8 @@ export async function scanImageFile(file: File): Promise<ScanResult | null> {
         const result = await html5QrCode.scanFile(resizedFile, true);
         return {
             text: result,
-            format: 'Detected'
+            format: 'Detected',
+            resizedImageUrl
         };
     } catch (error) {
         console.error('Image scan error:', error);
@@ -287,7 +293,7 @@ export async function scanImageFile(file: File): Promise<ScanResult | null> {
 }
 
 // Resize image for better scanning performance on mobile
-async function resizeImageForScanning(file: File): Promise<Blob> {
+async function resizeImageForScanning(file: File): Promise<{ blob: Blob; dataUrl: string }> {
     const MAX_WIDTH = 1280;
     const MAX_HEIGHT = 1280;
 
@@ -317,11 +323,14 @@ async function resizeImageForScanning(file: File): Promise<Blob> {
             // Handle image orientation (EXIF)
             ctx.drawImage(img, 0, 0, width, height);
 
+            // Get data URL for preview
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
             // Convert to blob
             canvas.toBlob(
                 (blob) => {
                     if (blob) {
-                        resolve(blob);
+                        resolve({ blob, dataUrl });
                     } else {
                         reject(new Error('Failed to create blob'));
                     }
@@ -342,4 +351,3 @@ async function resizeImageForScanning(file: File): Promise<Blob> {
         reader.readAsDataURL(file);
     });
 }
-
