@@ -9,6 +9,13 @@ export interface ImageScanResult extends ScanResult {
     resizedImageUrl: string;
 }
 
+// Response that always includes the resized image, even if scan fails
+export interface ImageScanResponse {
+    success: boolean;
+    result: ImageScanResult | null;
+    resizedImageUrl: string;
+}
+
 // Check if native BarcodeDetector API is available
 declare global {
     interface Window {
@@ -240,7 +247,7 @@ export function createScanner(containerId: string): NativeBarcodeScanner | Barco
     }
 }
 
-export async function scanImageFile(file: File): Promise<ImageScanResult | null> {
+export async function scanImageFile(file: File): Promise<ImageScanResponse> {
     // Resize image for better performance on mobile
     const { blob: resizedBlob, dataUrl: resizedImageUrl } = await resizeImageForScanning(file);
 
@@ -253,8 +260,12 @@ export async function scanImageFile(file: File): Promise<ImageScanResult | null>
 
             if (barcodes.length > 0) {
                 return {
-                    text: barcodes[0].rawValue,
-                    format: barcodes[0].format.toUpperCase(),
+                    success: true,
+                    result: {
+                        text: barcodes[0].rawValue,
+                        format: barcodes[0].format.toUpperCase(),
+                        resizedImageUrl
+                    },
                     resizedImageUrl
                 };
             }
@@ -279,13 +290,22 @@ export async function scanImageFile(file: File): Promise<ImageScanResult | null>
         const resizedFile = new File([resizedBlob], file.name, { type: 'image/jpeg' });
         const result = await html5QrCode.scanFile(resizedFile, true);
         return {
-            text: result,
-            format: 'Detected',
+            success: true,
+            result: {
+                text: result,
+                format: 'Detected',
+                resizedImageUrl
+            },
             resizedImageUrl
         };
     } catch (error) {
         console.error('Image scan error:', error);
-        return null;
+        // Return failure with resized image still available
+        return {
+            success: false,
+            result: null,
+            resizedImageUrl
+        };
     } finally {
         html5QrCode.clear();
         document.body.removeChild(tempContainer);

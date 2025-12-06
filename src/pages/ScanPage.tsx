@@ -111,10 +111,13 @@ export function ScanPage() {
         setNormalizedBarcodeImage(null);
         setUploadedImage(null);
 
-        const result = await scanImageFile(file);
-        if (result) {
-            setUploadedImage(result.resizedImageUrl);
-            handleScanResult(result);
+        const response = await scanImageFile(file);
+
+        // Always show the resized image
+        setUploadedImage(response.resizedImageUrl);
+
+        if (response.success && response.result) {
+            handleScanResult(response.result);
         } else {
             setError('바코드 또는 QR코드를 인식하지 못했습니다. 다른 이미지를 시도해 보세요.');
         }
@@ -221,13 +224,33 @@ export function ScanPage() {
             )}
 
             {error && (
-                <div className="alert alert-error mb-2">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="15" y1="9" x2="9" y2="15" />
-                        <line x1="9" y1="9" x2="15" y2="15" />
-                    </svg>
-                    {error}
+                <div className="error-section animate-fadeIn">
+                    <div className="alert alert-error mb-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                        {error}
+                    </div>
+
+                    {uploadedImage && (
+                        <div className="card mt-2">
+                            <div className="barcode-preview">
+                                <label className="label">📷 업로드된 이미지 (리사이즈됨)</label>
+                                <img src={uploadedImage} alt="Uploaded and resized" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+                            </div>
+                            <button
+                                className="btn btn-primary mt-2"
+                                onClick={() => {
+                                    setError('');
+                                    setUploadedImage(null);
+                                }}
+                            >
+                                다시 시도
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
