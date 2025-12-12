@@ -133,9 +133,9 @@ export class NativeBarcodeScanner {
             this.videoElement.setAttribute('autoplay', 'true');
             container.appendChild(this.videoElement);
 
-            // Get camera stream (back camera)
+            // Get camera stream (back camera) - 1920x1080 resolution
             this.stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
             });
 
             this.videoElement.srcObject = this.stream;
@@ -218,13 +218,17 @@ export class BarcodeScanner {
                 formatsToSupport: SUPPORTED_FORMATS
             });
 
-            // Use facingMode constraint for back camera
             await this.html5QrCode.start(
                 { facingMode: "environment" },
                 {
                     fps: 10,
                     qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.333
+                    aspectRatio: 1.777,  // 16:9 for 1920x1080
+                    videoConstraints: {
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
                 },
                 (decodedText, decodedResult) => {
                     onScan({
