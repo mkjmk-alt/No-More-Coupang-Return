@@ -219,7 +219,11 @@ export class BarcodeScanner {
             });
 
             await this.html5QrCode.start(
-                { facingMode: "environment" },
+                {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                },
                 {
                     fps: 10,
                     qrbox: { width: 250, height: 250 }
