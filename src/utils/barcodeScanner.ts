@@ -153,6 +153,18 @@ export class NativeBarcodeScanner {
             this.videoElement.srcObject = this.stream;
             await this.videoElement.play();
 
+            // === DEBUG: Log resolution info ===
+            const videoTrack = this.stream.getVideoTracks()[0];
+            if (videoTrack) {
+                const settings = videoTrack.getSettings();
+                console.log('=== NativeBarcodeScanner DEBUG ===');
+                console.log('1. track.getSettings():', settings);
+                console.log('2. video.videoWidth:', this.videoElement.videoWidth);
+                console.log('   video.videoHeight:', this.videoElement.videoHeight);
+                console.log('3. Canvas for decoding: N/A (uses video directly with BarcodeDetector)');
+            }
+            // === END DEBUG ===
+
             // Create BarcodeDetector
             this.detector = new window.BarcodeDetector!({ formats: NATIVE_FORMATS });
 
@@ -283,6 +295,24 @@ export class BarcodeScanner {
             }
 
             this.isScanning = true;
+
+            // === DEBUG: Log resolution info for html5-qrcode ===
+            setTimeout(() => {
+                const container = document.getElementById(this.containerId);
+                const video = container?.querySelector('video') as HTMLVideoElement;
+                if (video && video.srcObject) {
+                    const stream = video.srcObject as MediaStream;
+                    const track = stream.getVideoTracks()[0];
+                    if (track) {
+                        console.log('=== BarcodeScanner (html5-qrcode) DEBUG ===');
+                        console.log('1. track.getSettings():', track.getSettings());
+                        console.log('2. video.videoWidth:', video.videoWidth);
+                        console.log('   video.videoHeight:', video.videoHeight);
+                        console.log('3. Canvas for decoding: html5-qrcode uses internal canvas (same as video size)');
+                    }
+                }
+            }, 1000);
+            // === END DEBUG ===
         } catch (error) {
             console.error('Scanner start error:', error);
             onError?.(error instanceof Error ? error.message : '카메라 시작 실패');
