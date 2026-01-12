@@ -591,38 +591,7 @@ export function ComparePage() {
                     </ul>
                 </details>
 
-                <details className="guide-details">
-                    <summary>🩹 훼손된 바코드 원본 추정 가이드</summary>
-                    <div className="guide-content">
-                        <h4>훼손된 바코드를 복구하거나 추정하는 방법:</h4>
-                        <ol>
-                            <li>
-                                <strong>HRI(텍스트) 확인</strong>: 바코드 아래에 인쇄된 숫자나 문자를 확인하십시오. OCR이 일부 누락했더라도 눈으로 식별 가능한 부분을 직접 입력하여 재생성할 수 있습니다.
-                            </li>
-                            <li>
-                                <strong>체크섬(Check Digit) 계산</strong>: EAN-13, EAN-8 등은 마지막 자리가 체크섬입니다. 한 자리가 누락된 경우 다른 숫자들을 조합하여 유효한 체크섬을 역산할 수 있습니다.
-                            </li>
-                            <li>
-                                <strong>가드 바(Guard Bar) 패턴 분석</strong>: 바코드 양쪽 끝과 중앙의 긴 막대(가드 바) 패턴을 통해 EAN 형식을 구분할 수 있습니다.
-                            </li>
-                            <li>
-                                <strong>일부분 스캔</strong>: 바코드가 세로로 찢어진 경우, 손상되지 않은 위쪽이나 아래쪽 일부분만 스캔하여 데이터를 얻을 수 있습니다.
-                            </li>
-                            <li>
-                                <strong>유사 제품 대조</strong>: 비슷한 제조사의 다른 제품 바코드를 확인하여 앞부분(제조사 코드)을 추정할 수 있습니다.
-                            </li>
-                            <li>
-                                <strong>이미지 명암 조절</strong>: 원본 이미지가 너무 어둡거나 밝아 인식이 안 되는 경우, 휴대폰의 편집 기능을 이용해 대비(Contrast)를 높이면 숨겨진 막대 패턴이 드러날 수 있습니다.
-                            </li>
-                            <li>
-                                <strong>확대 및 각도 조절</strong>: 이미지를 확대하여 촬영하거나, 바코드 결을 따라 비스듬히 촬영하면 긁힌 자국을 피해 데이터를 인식할 수 있는 경우가 있습니다.
-                            </li>
-                        </ol>
-                        <p className="text-secondary" style={{ fontSize: '0.8rem', marginTop: '1rem' }}>
-                            * 본 도구는 인식된 데이터를 바탕으로 표준 규격의 바코드를 생성하여 원본과 비교를 도와줌으로써 명확한 복구를 지원합니다.
-                        </p>
-                    </div>
-                </details>
+
             </div>
         </div >
     );

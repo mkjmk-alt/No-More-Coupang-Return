@@ -706,34 +706,7 @@
     opacity: 0.8;
 }
 
-.guide-details {
-    margin-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    padding-top: 1rem;
-}
 
-.guide-content {
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: var(--radius-md);
-    margin-top: 0.5rem;
-}
-
-.guide-content h4 {
-    margin-bottom: 0.75rem;
-    color: var(--primary);
-}
-
-.guide-content ol {
-    padding-left: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.guide-content li strong {
-    color: var(--text);
-}
 
 @keyframes fadeIn {
     from {
