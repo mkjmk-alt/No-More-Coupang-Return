@@ -444,14 +444,23 @@ export function ComparePage() {
                                     📐 자동 맞춤
                                 </button>
                             </div>
-                            <input
-                                type="range"
-                                className="size-slider"
-                                value={sizeScale}
-                                onChange={(e) => setSizeScale(Number(e.target.value))}
-                                min={50}
-                                max={200}
-                            />
+                            <div className="slider-with-buttons">
+                                <button className="btn btn-sm btn-outline step-btn" onClick={() => setSizeScale(prev => Math.max(50, prev - 1))}>-</button>
+                                <div className="range-with-label">
+                                    <input
+                                        type="range"
+                                        className="size-slider"
+                                        value={sizeScale}
+                                        onChange={(e) => setSizeScale(Number(e.target.value))}
+                                        min={50}
+                                        max={200}
+                                    />
+                                    <div className="thumb-label" style={{ left: `${(sizeScale - 50) / (200 - 50) * 100}%` }}>
+                                        {sizeScale}%
+                                    </div>
+                                </div>
+                                <button className="btn btn-sm btn-outline step-btn" onClick={() => setSizeScale(prev => Math.min(200, prev + 1))}>+</button>
+                            </div>
 
                             <div className="position-controls">
                                 <span className="size-label">위치 미세 조절 (X: {offsetX}px, Y: {offsetY}px)</span>
@@ -483,7 +492,7 @@ export function ComparePage() {
                                 <div className="comparison-item">
                                     <h4>📷 원본 이미지</h4>
                                     <div className="image-wrapper">
-                                        <img src={result.originalImage} alt="Original barcode" />
+                                        <img src={result.originalImage} alt="Original barcode" className="original-barcode-img" />
                                     </div>
                                 </div>
 
@@ -507,14 +516,23 @@ export function ComparePage() {
                             <div className="overlay-container">
                                 <div className="overlay-controls">
                                     <span className="overlay-label">📷 원본</span>
-                                    <input
-                                        type="range"
-                                        className="overlay-slider"
-                                        value={overlayOpacity}
-                                        onChange={(e) => setOverlayOpacity(Number(e.target.value))}
-                                        min={0}
-                                        max={100}
-                                    />
+                                    <div className="slider-with-buttons full-width">
+                                        <button className="btn btn-sm btn-outline step-btn" onClick={() => setOverlayOpacity(prev => Math.max(0, prev - 5))}>-</button>
+                                        <div className="range-with-label">
+                                            <input
+                                                type="range"
+                                                className="overlay-slider"
+                                                value={overlayOpacity}
+                                                onChange={(e) => setOverlayOpacity(Number(e.target.value))}
+                                                min={0}
+                                                max={100}
+                                            />
+                                            <div className="thumb-label" style={{ left: `${overlayOpacity}%` }}>
+                                                {overlayOpacity}%
+                                            </div>
+                                        </div>
+                                        <button className="btn btn-sm btn-outline step-btn" onClick={() => setOverlayOpacity(prev => Math.min(100, prev + 5))}>+</button>
+                                    </div>
                                     <span className="overlay-label">🔄 생성</span>
                                 </div>
                                 <p className="overlay-hint">
@@ -523,7 +541,7 @@ export function ComparePage() {
 
                                 <div className="overlay-wrapper">
                                     <div className="overlay-layer original">
-                                        <img src={result.originalImage} alt="Original barcode" />
+                                        <img src={result.originalImage} alt="Original barcode" className="original-barcode-img" />
                                     </div>
                                     <div
                                         className="overlay-layer generated"

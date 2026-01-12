@@ -345,30 +345,43 @@
     cursor: pointer;
 }
 
+/* Size Slider Thumb */
 .size-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px;
-    height: 18px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: 6px;
+    cursor: grab;
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s ease;
+    background-image: linear-gradient(90deg, #ddd 1px, transparent 1px, transparent 3px, #ddd 3px);
+    background-size: 4px 12px;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
-.size-slider::-webkit-slider-thumb:hover {
+.size-slider::-webkit-slider-thumb:active {
+    cursor: grabbing;
     transform: scale(1.1);
+    background-color: var(--primary);
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.5) 1px, transparent 1px, transparent 3px, rgba(255, 255, 255, 0.5) 3px);
 }
 
 .size-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-    box-shadow: var(--shadow-sm);
+    width: 24px;
+    height: 24px;
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: 6px;
+    cursor: grab;
+    box-shadow: var(--shadow-md);
+    background-image: linear-gradient(90deg, #ddd 1px, transparent 1px, transparent 3px, #ddd 3px);
+    background-size: 4px 12px;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .size-info {
@@ -414,30 +427,42 @@
     cursor: pointer;
 }
 
+/* Overlay Slider Thumb */
 .overlay-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-    border-radius: 50%;
-    cursor: pointer;
+    width: 40px;
+    height: 24px;
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    cursor: grab;
     box-shadow: var(--shadow-md);
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease;
+    background-image: linear-gradient(90deg, #ddd 1px, transparent 1px, transparent 3px, #ddd 3px, transparent 3px, transparent 5px, #ddd 5px);
+    background-size: 6px 12px;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
-.overlay-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
+.overlay-slider::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+    background-color: var(--primary);
 }
 
 .overlay-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
+    width: 40px;
+    height: 24px;
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    cursor: grab;
     box-shadow: var(--shadow-md);
+    background-image: linear-gradient(90deg, #ddd 1px, transparent 1px, transparent 3px, #ddd 3px, transparent 3px, transparent 5px, #ddd 5px);
+    background-size: 6px 12px;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .overlay-hint {
@@ -566,4 +591,89 @@
 
 .pos-btn:active {
     transform: scale(0.95);
+}
+
+/* Slider with Buttons */
+.slider-with-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.slider-with-buttons.full-width {
+    flex: 1;
+}
+
+.step-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Original Barcode Color Modification */
+.original-barcode-img {
+    filter: invert(28%) sepia(97%) saturate(2253%) hue-rotate(212deg) brightness(98%) contrast(104%);
+    /* This filter makes black bars look sharply blue */
+    mix-blend-mode: multiply;
+}
+
+/* Overlay Specific Adjustments */
+.overlay-layer.original .original-barcode-img {
+    filter: invert(28%) sepia(97%) saturate(2253%) hue-rotate(212deg) brightness(98%) contrast(104%);
+}
+
+.overlay-layer.generated img {
+    /* Generated barcode stays black for contrast */
+    filter: none;
+}
+
+/* Range with floating label */
+.range-with-label {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    /* Add space for the label above */
+}
+
+.thumb-label {
+    position: absolute;
+    top: -10px;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    pointer-events: none;
+    /* Don't interfere with dragging */
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+    z-index: 10;
+}
+
+.thumb-label::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 4px 4px 0 4px;
+    border-style: solid;
+    border-color: var(--primary) transparent transparent transparent;
+}
+
+/* Ensure sliders in range-with-label take full width */
+.range-with-label input[type="range"] {
+    width: 100%;
+    margin: 0;
 }
