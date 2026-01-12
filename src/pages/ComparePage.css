@@ -517,3 +517,53 @@
         max-width: 100%;
     }
 }
+
+/* Position Controls */
+.position-controls {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pos-btn-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.pos-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.pos-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pos-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pos-btn.reset-pos {
+    font-size: 1.2rem;
+    color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.pos-btn:active {
+    transform: scale(0.95);
+}

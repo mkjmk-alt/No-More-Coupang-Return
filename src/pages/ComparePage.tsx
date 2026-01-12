@@ -60,6 +60,10 @@ export function ComparePage() {
     const [sizeScale, setSizeScale] = useState(100); // Percentage scale for generated barcode
     const [generatedDimensions, setGeneratedDimensions] = useState<ImageDimensions | null>(null);
 
+    // Position offset for overlay comparison
+    const [offsetX, setOffsetX] = useState(0);
+    const [offsetY, setOffsetY] = useState(0);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -285,17 +289,21 @@ export function ComparePage() {
         setProgress(0);
         setSizeScale(100);
         setGeneratedDimensions(null);
+        setOffsetX(0);
+        setOffsetY(0);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
     };
 
-    // Calculate scaled dimensions
+    // Calculate scaled dimensions and position
     const getScaledStyle = () => {
         if (!generatedDimensions) return {};
         return {
             width: `${(generatedDimensions.width * sizeScale) / 100}px`,
-            maxWidth: '100%'
+            maxWidth: 'none', // Remove maxWidth to allow movement
+            transform: `translate(${offsetX}px, ${offsetY}px)`,
+            transition: 'transform 0.1s ease-out'
         };
     };
 
@@ -428,7 +436,7 @@ export function ComparePage() {
                             </div>
                         </div>
 
-                        {/* Size adjustment controls */}
+                        {/* Size and Position adjustment controls */}
                         <div className="size-controls">
                             <div className="size-control-row">
                                 <span className="size-label">생성 바코드 크기: {sizeScale}%</span>
@@ -444,6 +452,24 @@ export function ComparePage() {
                                 min={50}
                                 max={200}
                             />
+
+                            <div className="position-controls">
+                                <span className="size-label">위치 미세 조절 (X: {offsetX}px, Y: {offsetY}px)</span>
+                                <div className="pos-btn-grid">
+                                    <div className="pos-row">
+                                        <button className="btn btn-sm btn-outline pos-btn" title="위로" onClick={() => setOffsetY(prev => prev - 1)}>↑</button>
+                                    </div>
+                                    <div className="pos-row">
+                                        <button className="btn btn-sm btn-outline pos-btn" title="왼쪽으로" onClick={() => setOffsetX(prev => prev - 1)}>←</button>
+                                        <button className="btn btn-sm btn-outline pos-btn reset-pos" title="위치 초기화" onClick={() => { setOffsetX(0); setOffsetY(0); }}>◎</button>
+                                        <button className="btn btn-sm btn-outline pos-btn" title="오른쪽으로" onClick={() => setOffsetX(prev => prev + 1)}>→</button>
+                                    </div>
+                                    <div className="pos-row">
+                                        <button className="btn btn-sm btn-outline pos-btn" title="아래로" onClick={() => setOffsetY(prev => prev + 1)}>↓</button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="size-info">
                                 <span>원본: {result.originalDimensions.width}×{result.originalDimensions.height}px</span>
                                 {generatedDimensions && (
