@@ -14,6 +14,30 @@ import {
 import type { ScanHistoryItem } from '../utils/helpers';
 import './ScanPage.css';
 
+// 바코드 형식에 대한 상세 설명
+const BARCODE_FORMAT_INFO: Record<string, { name: string; description: string }> = {
+    'QR_CODE': { name: 'QR 코드', description: '2D 매트릭스 코드, 다양한 데이터 저장 가능 (URL, 텍스트 등)' },
+    'CODE_128': { name: 'Code 128', description: '고밀도 1D 바코드, 물류/유통에서 주로 사용' },
+    'CODE_39': { name: 'Code 39', description: '영숫자 1D 바코드, 산업용으로 널리 사용' },
+    'EAN_13': { name: 'EAN-13', description: '13자리 국제 상품 바코드, 소매업에서 표준 사용' },
+    'EAN_8': { name: 'EAN-8', description: '8자리 국제 상품 바코드, 소형 제품용' },
+    'UPC_A': { name: 'UPC-A', description: '12자리 미국/캐나다 상품 바코드' },
+    'UPC_E': { name: 'UPC-E', description: '압축된 6자리 UPC 바코드, 소형 제품용' },
+    'DATA_MATRIX': { name: 'Data Matrix', description: '2D 매트릭스 코드, 작은 공간에 많은 데이터 저장' },
+    'ITF': { name: 'ITF (Interleaved 2 of 5)', description: '숫자 전용 바코드, 박스/팔레트에 사용' },
+    'CODABAR': { name: 'Codabar', description: '도서관, 혈액은행, 택배 등에서 사용' },
+    'PDF_417': { name: 'PDF417', description: '2D 스택 바코드, 신분증/운전면허증에 사용' },
+    'AZTEC': { name: 'Aztec', description: '2D 매트릭스 코드, 항공권/모바일 티켓에 사용' },
+    'UNKNOWN': { name: '알 수 없음', description: '형식을 감지하지 못함' },
+    'DETECTED': { name: '감지됨', description: 'html5-qrcode 라이브러리에서 감지' },
+};
+
+// 바코드 형식 정보 가져오기
+function getBarcodeFormatInfo(format: string): { name: string; description: string } {
+    const normalizedFormat = format.toUpperCase().replace(/-/g, '_');
+    return BARCODE_FORMAT_INFO[normalizedFormat] || { name: format, description: '알려지지 않은 형식' };
+}
+
 export function ScanPage() {
     const [isScanning, setIsScanning] = useState(false);
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
@@ -24,6 +48,12 @@ export function ScanPage() {
     const [historyRefresh, setHistoryRefresh] = useState(0);
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [cameraResolution, setCameraResolution] = useState<string>('');
+
+    // 플래시 라이트 및 카메라 전환 상태
+    const [torchEnabled, setTorchEnabled] = useState(false);
+    const [torchSupported, setTorchSupported] = useState(false);
+    const [availableCameras, setAvailableCameras] = useState<{ deviceId: string; label: string }[]>([]);
+    const [currentCameraId, setCurrentCameraId] = useState<string | null>(null);
 
     // Camera scan mode: photo capture or realtime
     const [isPhotoMode, setIsPhotoMode] = useState(false);
@@ -87,6 +117,9 @@ export function ScanPage() {
         setNormalizedBarcodeImage(null);
         setIsScanning(true);
         setCameraResolution('');
+        setTorchEnabled(false);
+        setTorchSupported(false);
+        setAvailableCameras([]);
 
         // Wait for the container to be rendered
         setTimeout(async () => {
@@ -99,11 +132,24 @@ export function ScanPage() {
                 }
             );
 
-            // Get video resolution after scanning starts
-            setTimeout(() => {
+            // Get video resolution and camera info after scanning starts
+            setTimeout(async () => {
                 const video = document.querySelector('#scanner-container video') as HTMLVideoElement;
                 if (video && video.videoWidth && video.videoHeight) {
                     setCameraResolution(`${video.videoWidth} × ${video.videoHeight}`);
+                }
+
+                // Check torch support and get camera list (NativeBarcodeScanner only)
+                if (scannerRef.current && 'isTorchSupported' in scannerRef.current) {
+                    const scanner = scannerRef.current as NativeBarcodeScanner;
+                    const supported = await scanner.isTorchSupported();
+                    setTorchSupported(supported);
+
+                    const cameras = await scanner.getAvailableCameras();
+                    setAvailableCameras(cameras);
+
+                    const currentId = scanner.getCurrentDeviceId();
+                    setCurrentCameraId(currentId);
                 }
             }, 500);
         }, 100);
@@ -113,6 +159,37 @@ export function ScanPage() {
         if (scannerRef.current) {
             await scannerRef.current.stop();
             setIsScanning(false);
+            setTorchEnabled(false);
+            setTorchSupported(false);
+            setAvailableCameras([]);
+            setCurrentCameraId(null);
+        }
+    };
+
+    // 플래시 라이트 토글
+    const handleToggleTorch = async () => {
+        if (scannerRef.current && 'toggleTorch' in scannerRef.current) {
+            const scanner = scannerRef.current as NativeBarcodeScanner;
+            const enabled = await scanner.toggleTorch();
+            setTorchEnabled(enabled);
+        }
+    };
+
+    // 카메라 전환
+    const handleSwitchCamera = async (deviceId: string) => {
+        if (scannerRef.current && 'switchCamera' in scannerRef.current) {
+            const scanner = scannerRef.current as NativeBarcodeScanner;
+            await scanner.switchCamera(deviceId);
+            setCurrentCameraId(deviceId);
+            setTorchEnabled(false); // 카메라 전환 시 토치 리셋
+
+            // Update resolution
+            setTimeout(() => {
+                const video = document.querySelector('#scanner-container video') as HTMLVideoElement;
+                if (video && video.videoWidth && video.videoHeight) {
+                    setCameraResolution(`${video.videoWidth} × ${video.videoHeight}`);
+                }
+            }, 500);
         }
     };
 
@@ -329,12 +406,41 @@ export function ScanPage() {
             {isScanning && (
                 <div className="scanner-section animate-fadeIn">
                     <div id="scanner-container" className="scanner-container"></div>
-                    <button className="btn btn-outline mt-2" onClick={stopCameraScan}>
-                        스캔 중지
-                    </button>
+
+                    {/* 스캐너 컨트롤 버튼들 */}
+                    <div className="scanner-controls mt-2">
+                        <button className="btn btn-outline" onClick={stopCameraScan}>
+                            ⏹️ 중지
+                        </button>
+
+                        {torchSupported && (
+                            <button
+                                className={`btn ${torchEnabled ? 'btn-warning' : 'btn-outline'}`}
+                                onClick={handleToggleTorch}
+                            >
+                                {torchEnabled ? '🔦 라이트 끄기' : '💡 라이트 켜기'}
+                            </button>
+                        )}
+
+                        {availableCameras.length > 1 && (
+                            <select
+                                className="camera-select"
+                                value={currentCameraId || ''}
+                                onChange={(e) => handleSwitchCamera(e.target.value)}
+                            >
+                                {availableCameras.map((camera, index) => (
+                                    <option key={camera.deviceId} value={camera.deviceId}>
+                                        📷 {camera.label || `카메라 ${index + 1}`}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+
                     {cameraResolution && (
                         <p className="text-center text-sm text-muted mt-1">
                             📷 해상도: {cameraResolution}
+                            {availableCameras.length > 1 && ` (${availableCameras.length}개 카메라 사용 가능)`}
                         </p>
                     )}
                 </div>
@@ -436,7 +542,18 @@ export function ScanPage() {
                     </div>
 
                     <div className="result-type">
-                        <span className="badge">{scanResult.format}</span>
+                        {(() => {
+                            const formatInfo = getBarcodeFormatInfo(scanResult.format);
+                            return (
+                                <div className="format-info-card">
+                                    <div className="format-header">
+                                        <span className="badge">{formatInfo.name}</span>
+                                        <span className="format-raw">({scanResult.format})</span>
+                                    </div>
+                                    <p className="format-description">{formatInfo.description}</p>
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {hasWhitespaceOrSpecial(scanResult.text) && (
@@ -460,6 +577,23 @@ export function ScanPage() {
                         </div>
                     </div>
 
+                    {scanResult.screenshot && (
+                        <div className="barcode-preview mt-2 screenshot-section">
+                            <label className="label">📸 스캔 시점 스크린샷 (고해상도)</label>
+                            <img src={scanResult.screenshot} alt="Scan screenshot" />
+                            <button
+                                className="btn btn-secondary mt-2"
+                                onClick={() => {
+                                    if (scanResult.screenshot) {
+                                        downloadImage(scanResult.screenshot, `barcode_screenshot_${Date.now()}.jpg`);
+                                    }
+                                }}
+                            >
+                                📷 스크린샷 다운로드 (JPG)
+                            </button>
+                        </div>
+                    )}
+
                     {uploadedImage && (
                         <div className="barcode-preview mt-2">
                             <label className="label">📷 업로드된 이미지 (리사이즈됨)</label>
@@ -476,7 +610,10 @@ export function ScanPage() {
 
                     {normalizedBarcodeImage && (
                         <div className="barcode-preview mt-2">
-                            <label className="label">정규화 바코드</label>
+                            <div className="barcode-preview-header">
+                                <label className="label">정규화 바코드</label>
+                                <span className="badge badge-secondary">CODE 128</span>
+                            </div>
                             <img src={normalizedBarcodeImage} alt="Normalized barcode" />
                             <button className="btn btn-primary mt-2" onClick={handleDownloadBarcode}>
                                 바코드 다운로드 (PNG)

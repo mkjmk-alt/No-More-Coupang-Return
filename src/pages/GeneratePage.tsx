@@ -7,12 +7,15 @@ import {
     downloadImage,
     LS_3102_PRESET
 } from '../utils/barcodeGenerator';
-import type { BarcodeType, A4SheetOptions, A4SheetPDFOptions, QRErrorCorrectionLevel } from '../utils/barcodeGenerator';
+import type { BarcodeType, A4SheetOptions, A4SheetPDFOptions, QRErrorCorrectionLevel, QREncodingMode } from '../utils/barcodeGenerator';
 import { removeWhitespaceSpecial } from '../utils/helpers';
 import './GeneratePage.css';
 
 const BARCODE_TYPES: { value: BarcodeType; label: string }[] = [
-    { value: 'CODE128', label: 'Code128' },
+    { value: 'CODE128', label: 'Code128 (자동)' },
+    { value: 'CODE128A', label: 'Code128-A (대문자/숫자/제어문자)' },
+    { value: 'CODE128B', label: 'Code128-B (대소문자/숫자)' },
+    { value: 'CODE128C', label: 'Code128-C (숫자 전용)' },
     { value: 'QR', label: 'QR 코드' },
     { value: 'EAN13', label: 'EAN-13' },
     { value: 'EAN8', label: 'EAN-8' },
@@ -48,6 +51,7 @@ export function GeneratePage() {
     const [qrVersion, setQrVersion] = useState<number | undefined>(undefined);
     const [qrDarkColor, setQrDarkColor] = useState('#000000');
     const [qrLightColor, setQrLightColor] = useState('#ffffff');
+    const [qrEncodingMode, setQrEncodingMode] = useState<QREncodingMode>('auto');
 
     const handleGenerate = async () => {
         if (!inputText.trim()) {
@@ -69,7 +73,8 @@ export function GeneratePage() {
                 maskPattern: qrMaskPattern as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | undefined,
                 version: qrVersion,
                 darkColor: qrDarkColor,
-                lightColor: qrLightColor
+                lightColor: qrLightColor,
+                mode: qrEncodingMode
             });
         } else {
             img = await generateBarcode(content, barcodeType, { fontSize: barcodeFontSize });
@@ -211,6 +216,20 @@ export function GeneratePage() {
                 </div>
             </section>
 
+            {(barcodeType === 'CODE128' || barcodeType === 'CODE128A' || barcodeType === 'CODE128B' || barcodeType === 'CODE128C') && (
+                <section className="section glass-card">
+                    <h3 className="section-title">Code128 모드 안내</h3>
+                    <div className="alert alert-info">
+                        <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                            <li><strong>Code128 (자동)</strong>: 입력 내용에 따라 최적의 모드 자동 선택</li>
+                            <li><strong>Code128-A</strong>: 대문자(A-Z), 숫자(0-9), 특수문자, 제어문자 지원</li>
+                            <li><strong>Code128-B</strong>: 대소문자(A-Z, a-z), 숫자(0-9), 특수문자 지원</li>
+                            <li><strong>Code128-C</strong>: 숫자만 지원 (2자리씩 압축하여 효율적)</li>
+                        </ul>
+                    </div>
+                </section>
+            )}
+
             {barcodeType === 'QR' && (
                 <section className="section glass-card">
                     <h3 className="section-title">QR 코드 설정</h3>
@@ -246,6 +265,21 @@ export function GeneratePage() {
                                 <option value="6">패턴 6</option>
                                 <option value="7">패턴 7</option>
                             </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="label">인코딩 모드</label>
+                            <select
+                                className="select"
+                                value={qrEncodingMode}
+                                onChange={(e) => setQrEncodingMode(e.target.value as QREncodingMode)}
+                            >
+                                <option value="auto">자동 (최적화)</option>
+                                <option value="numeric">숫자 (0-9)</option>
+                                <option value="alphanumeric">영숫자 (A-Z, 0-9)</option>
+                                <option value="byte">바이트 (UTF-8)</option>
+                                <option value="kanji">한자 (Shift JIS)</option>
+                            </select>
+                            <span className="text-sm text-muted">한글은 바이트 모드 사용</span>
                         </div>
                     </div>
 

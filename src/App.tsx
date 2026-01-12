@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Header } from './components/Header';
 import { ScanPage } from './pages/ScanPage';
 import { GeneratePage } from './pages/GeneratePage';
+import { TestPage } from './pages/TestPage';
+import { ComparePage } from './pages/ComparePage';
 import './App.css';
 
 function App() {
@@ -13,6 +15,8 @@ function App() {
           <Routes>
             <Route path="/" element={<ScanPage />} />
             <Route path="/generate" element={<GeneratePage />} />
+            <Route path="/test" element={<TestPage />} />
+            <Route path="/compare" element={<ComparePage />} />
           </Routes>
         </main>
       </div>

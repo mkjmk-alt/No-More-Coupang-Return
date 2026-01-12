@@ -34,6 +34,18 @@ export function Header() {
                 >
                     생성
                 </Link>
+                <Link
+                    to="/test"
+                    className={`nav-link ${location.pathname === '/test' ? 'active' : ''}`}
+                >
+                    테스트
+                </Link>
+                <Link
+                    to="/compare"
+                    className={`nav-link ${location.pathname === '/compare' ? 'active' : ''}`}
+                >
+                    비교
+                </Link>
             </nav>
         </header>
     );

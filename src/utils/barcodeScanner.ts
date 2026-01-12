@@ -4,6 +4,7 @@ import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from '@zxing/
 export interface ScanResult {
     text: string;
     format: string;
+    screenshot?: string; // 고해상도 스크린샷 (data URL)
 }
 
 export interface ImageScanResult extends ScanResult {
@@ -109,6 +110,10 @@ export class NativeBarcodeScanner {
     private animationFrameId: number | null = null;
     private isScanning: boolean = false;
     private containerId: string;
+    private torchEnabled: boolean = false;
+    private currentDeviceId: string | null = null;
+    private onScanCallback: ((result: ScanResult) => void) | null = null;
+    private onErrorCallback: ((error: string) => void) | null = null;
 
     constructor(containerId: string) {
         this.containerId = containerId;
@@ -116,6 +121,9 @@ export class NativeBarcodeScanner {
 
     async start(onScan: (result: ScanResult) => void, onError?: (error: string) => void): Promise<void> {
         if (this.isScanning) return;
+
+        this.onScanCallback = onScan;
+        this.onErrorCallback = onError || null;
 
         try {
             // Create video element
@@ -133,25 +141,7 @@ export class NativeBarcodeScanner {
             this.videoElement.setAttribute('autoplay', 'true');
             container.appendChild(this.videoElement);
 
-            // Try 1920x1080 first, fallback for Safari compatibility
-            try {
-                this.stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    }
-                });
-            } catch {
-                // Fallback for Safari or unsupported devices
-                console.log('1920x1080 failed, using fallback');
-                this.stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
-                });
-            }
-
-            this.videoElement.srcObject = this.stream;
-            await this.videoElement.play();
+            await this.startCamera();
 
             // Create BarcodeDetector
             this.detector = new window.BarcodeDetector!({ formats: NATIVE_FORMATS });
@@ -166,9 +156,14 @@ export class NativeBarcodeScanner {
                     const barcodes = await this.detector.detect(this.videoElement);
                     if (barcodes.length > 0) {
                         const barcode = barcodes[0];
+
+                        // 바코드 감지 시 고해상도 스크린샷 캡처
+                        const screenshot = this.captureHighResScreenshot();
+
                         onScan({
                             text: barcode.rawValue,
-                            format: barcode.format.toUpperCase()
+                            format: barcode.format.toUpperCase(),
+                            screenshot
                         });
                         return; // Stop after successful scan
                     }
@@ -184,6 +179,41 @@ export class NativeBarcodeScanner {
         } catch (error) {
             console.error('Native scanner start error:', error);
             onError?.(error instanceof Error ? error.message : '카메라 시작 실패');
+        }
+    }
+
+    private async startCamera(deviceId?: string): Promise<void> {
+        // Stop existing stream
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+        }
+
+        const constraints: MediaStreamConstraints = {
+            video: deviceId
+                ? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+                : { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+        };
+
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch {
+            // Fallback
+            console.log('High resolution failed, using fallback');
+            this.stream = await navigator.mediaDevices.getUserMedia({
+                video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' }
+            });
+        }
+
+        if (this.videoElement) {
+            this.videoElement.srcObject = this.stream;
+            await this.videoElement.play();
+        }
+
+        // Store current device ID
+        const track = this.stream.getVideoTracks()[0];
+        if (track) {
+            const settings = track.getSettings();
+            this.currentDeviceId = settings.deviceId || null;
         }
     }
 
@@ -204,10 +234,148 @@ export class NativeBarcodeScanner {
             this.videoElement.remove();
             this.videoElement = null;
         }
+
+        this.torchEnabled = false;
     }
 
     getIsScanning(): boolean {
         return this.isScanning;
+    }
+
+    // 플래시/토치 토글
+    async toggleTorch(): Promise<boolean> {
+        if (!this.stream) return false;
+
+        const track = this.stream.getVideoTracks()[0];
+        if (!track) return false;
+
+        try {
+            const capabilities = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+            if (!capabilities.torch) {
+                console.log('Torch not supported on this device');
+                return false;
+            }
+
+            this.torchEnabled = !this.torchEnabled;
+            await track.applyConstraints({
+                advanced: [{ torch: this.torchEnabled } as MediaTrackConstraintSet]
+            });
+
+            return this.torchEnabled;
+        } catch (error) {
+            console.error('Torch toggle failed:', error);
+            return false;
+        }
+    }
+
+    getTorchEnabled(): boolean {
+        return this.torchEnabled;
+    }
+
+    // 토치 지원 여부 확인
+    async isTorchSupported(): Promise<boolean> {
+        if (!this.stream) return false;
+
+        const track = this.stream.getVideoTracks()[0];
+        if (!track) return false;
+
+        try {
+            const capabilities = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+            return !!capabilities.torch;
+        } catch {
+            return false;
+        }
+    }
+
+    // 사용 가능한 후면 카메라 목록 가져오기
+    async getAvailableCameras(): Promise<{ deviceId: string; label: string }[]> {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+            // Filter for back cameras (usually contain 'back', 'rear', 'environment' in label)
+            // Or just return all video devices if no specific back cameras found
+            return videoDevices.map((device, index) => ({
+                deviceId: device.deviceId,
+                label: device.label || `카메라 ${index + 1}`
+            }));
+        } catch (error) {
+            console.error('Failed to get cameras:', error);
+            return [];
+        }
+    }
+
+    getCurrentDeviceId(): string | null {
+        return this.currentDeviceId;
+    }
+
+    // 다른 카메라로 전환
+    async switchCamera(deviceId: string): Promise<void> {
+        if (!this.isScanning || deviceId === this.currentDeviceId) return;
+
+        try {
+            // Pause scanning temporarily
+            if (this.animationFrameId) {
+                cancelAnimationFrame(this.animationFrameId);
+            }
+
+            // Switch to new camera
+            await this.startCamera(deviceId);
+
+            // Resume scanning
+            const scan = async () => {
+                if (!this.isScanning || !this.videoElement || !this.detector) return;
+
+                try {
+                    const barcodes = await this.detector.detect(this.videoElement);
+                    if (barcodes.length > 0 && this.onScanCallback) {
+                        const barcode = barcodes[0];
+                        const screenshot = this.captureHighResScreenshot();
+                        this.onScanCallback({
+                            text: barcode.rawValue,
+                            format: barcode.format.toUpperCase(),
+                            screenshot
+                        });
+                        return;
+                    }
+                } catch {
+                    // Ignore
+                }
+
+                this.animationFrameId = requestAnimationFrame(scan);
+            };
+
+            this.animationFrameId = requestAnimationFrame(scan);
+
+            // Reset torch state when switching cameras
+            this.torchEnabled = false;
+        } catch (error) {
+            console.error('Camera switch failed:', error);
+            this.onErrorCallback?.('카메라 전환 실패');
+        }
+    }
+
+    // 고해상도 스크린샷 캡처 (비디오 원본 해상도)
+    private captureHighResScreenshot(): string | undefined {
+        if (!this.videoElement) return undefined;
+
+        try {
+            const canvas = document.createElement('canvas');
+            // 비디오의 실제 해상도로 캡처 (1080p 등)
+            canvas.width = this.videoElement.videoWidth;
+            canvas.height = this.videoElement.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return undefined;
+
+            ctx.drawImage(this.videoElement, 0, 0, canvas.width, canvas.height);
+
+            // 고품질 JPEG로 저장 (PNG는 용량이 너무 큼)
+            return canvas.toDataURL('image/jpeg', 0.95);
+        } catch (error) {
+            console.error('Screenshot capture failed:', error);
+            return undefined;
+        }
     }
 }
 
@@ -242,9 +410,13 @@ export class BarcodeScanner {
             };
 
             const successCallback = (decodedText: string, decodedResult: { result: { format?: { formatName?: string } } }) => {
+                // 바코드 감지 시 고해상도 스크린샷 캡처
+                const screenshot = this.captureHighResScreenshot();
+
                 onScan({
                     text: decodedText,
-                    format: decodedResult.result.format?.formatName || 'Unknown'
+                    format: decodedResult.result.format?.formatName || 'Unknown',
+                    screenshot
                 });
             };
 
@@ -303,6 +475,33 @@ export class BarcodeScanner {
 
     getIsScanning(): boolean {
         return this.isScanning;
+    }
+
+    // 고해상도 스크린샷 캡처 (html5-qrcode 내부 비디오 요소에서)
+    private captureHighResScreenshot(): string | undefined {
+        try {
+            // html5-qrcode가 생성한 비디오 요소 찾기
+            const container = document.getElementById(this.containerId);
+            if (!container) return undefined;
+
+            const video = container.querySelector('video');
+            if (!video) return undefined;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return undefined;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // 고품질 JPEG로 저장
+            return canvas.toDataURL('image/jpeg', 0.95);
+        } catch (error) {
+            console.error('Screenshot capture failed:', error);
+            return undefined;
+        }
     }
 }
 

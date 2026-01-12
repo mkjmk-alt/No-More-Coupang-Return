@@ -20,6 +20,46 @@
     border: 2px solid var(--border-color);
 }
 
+/* 스캐너 컨트롤 버튼들 */
+.scanner-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.scanner-controls .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border: none;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+}
+
+.camera-select {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.camera-select:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+}
+
 .result-section {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
@@ -58,6 +98,47 @@
     border-radius: var(--radius-sm);
 }
 
+.badge-secondary {
+    background: linear-gradient(135deg, #4a5568, #718096);
+}
+
+/* 바코드 프리뷰 헤더 */
+.barcode-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* 바코드 형식 정보 카드 */
+.format-info-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+}
+
+.format-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.format-raw {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+.format-description {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
 .result-content {
     margin-bottom: 0.5rem;
 }
@@ -90,6 +171,22 @@
     border-radius: var(--radius-md);
     padding: 0.5rem;
     align-self: center;
+}
+
+/* 스크린샷 섹션 - 고해상도 이미지용 */
+.screenshot-section {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.screenshot-section img {
+    max-width: 100%;
+    width: auto;
+    max-height: 400px;
+    object-fit: contain;
+    border: 1px solid var(--border-color);
 }
 
 .a4-section {

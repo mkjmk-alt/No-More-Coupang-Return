@@ -2,7 +2,7 @@ import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 
-export type BarcodeType = 'CODE128' | 'EAN13' | 'EAN8' | 'CODE39' | 'QR';
+export type BarcodeType = 'CODE128' | 'CODE128A' | 'CODE128B' | 'CODE128C' | 'EAN13' | 'EAN8' | 'CODE39' | 'QR';
 
 export interface BarcodeOptions {
     width?: number;
@@ -53,6 +53,9 @@ export async function generateBarcode(
 // QR Code error correction levels
 export type QRErrorCorrectionLevel = 'L' | 'M' | 'Q' | 'H';
 
+// QR Code encoding modes
+export type QREncodingMode = 'auto' | 'numeric' | 'alphanumeric' | 'byte' | 'kanji';
+
 // QR Code advanced options interface
 export interface QRCodeOptions {
     width?: number;
@@ -62,6 +65,7 @@ export interface QRCodeOptions {
     version?: number; // 1-40
     darkColor?: string;
     lightColor?: string;
+    mode?: QREncodingMode;
 }
 
 
@@ -76,7 +80,8 @@ export async function generateQRCode(
         maskPattern,
         version,
         darkColor = '#000000',
-        lightColor = '#ffffff'
+        lightColor = '#ffffff',
+        mode = 'auto'
     } = options;
 
     try {
@@ -96,6 +101,10 @@ export async function generateQRCode(
         }
         if (version !== undefined) {
             qrOptions.version = version;
+        }
+        // Set encoding mode if specified (auto means let library decide)
+        if (mode && mode !== 'auto') {
+            (qrOptions as Record<string, unknown>).mode = mode;
         }
 
         const dataUrl = await QRCode.toDataURL(content, qrOptions);
