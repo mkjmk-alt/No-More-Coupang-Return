@@ -1,13 +1,20 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Tesseract from 'tesseract.js';
 import { generateBarcode } from '../utils/barcodeGenerator';
 import type { BarcodeType } from '../utils/barcodeGenerator';
 import './ComparePage.css';
 
 type ProcessingStatus = 'idle' | 'uploading' | 'recognizing' | 'generating' | 'complete' | 'error';
+type CompareMode = 'side-by-side' | 'overlay';
+
+interface ImageDimensions {
+    width: number;
+    height: number;
+}
 
 interface CompareResult {
     originalImage: string;
+    originalDimensions: ImageDimensions;
     recognizedText: string;
     generatedBarcode: string;
     barcodeType: BarcodeType;
@@ -24,6 +31,20 @@ const BARCODE_TYPES: { value: BarcodeType; label: string }[] = [
     { value: 'CODE39', label: 'Code39' }
 ];
 
+// Get image dimensions from data URL
+const getImageDimensions = (dataUrl: string): Promise<ImageDimensions> => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            resolve({ width: img.width, height: img.height });
+        };
+        img.onerror = () => {
+            resolve({ width: 300, height: 100 }); // Default fallback
+        };
+        img.src = dataUrl;
+    });
+};
+
 export function ComparePage() {
     const [status, setStatus] = useState<ProcessingStatus>('idle');
     const [statusMessage, setStatusMessage] = useState('');
@@ -33,24 +54,46 @@ export function ComparePage() {
     const [manualText, setManualText] = useState('');
     const [progress, setProgress] = useState(0);
 
+    // Compare mode and size adjustment states
+    const [compareMode, setCompareMode] = useState<CompareMode>('side-by-side');
+    const [overlayOpacity, setOverlayOpacity] = useState(50);
+    const [sizeScale, setSizeScale] = useState(100); // Percentage scale for generated barcode
+    const [generatedDimensions, setGeneratedDimensions] = useState<ImageDimensions | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
 
+    // Update generated barcode dimensions when result changes
+    useEffect(() => {
+        if (result?.generatedBarcode) {
+            getImageDimensions(result.generatedBarcode).then(setGeneratedDimensions);
+        }
+    }, [result?.generatedBarcode]);
+
+    // Auto-calculate optimal scale based on original image dimensions
+    const calculateOptimalScale = useCallback((original: ImageDimensions, generated: ImageDimensions): number => {
+        // Calculate scale to match widths
+        const scaleByWidth = (original.width / generated.width) * 100;
+        // Clamp between 50% and 200%
+        return Math.max(50, Math.min(200, Math.round(scaleByWidth)));
+    }, []);
+
+    // Apply auto-fit when dimensions are available
+    const handleAutoFit = useCallback(() => {
+        if (result?.originalDimensions && generatedDimensions) {
+            const optimalScale = calculateOptimalScale(result.originalDimensions, generatedDimensions);
+            setSizeScale(optimalScale);
+        }
+    }, [result?.originalDimensions, generatedDimensions, calculateOptimalScale]);
+
     // Clean up recognized text - extract only barcode content
     const cleanBarcodeText = (text: string): string => {
-        // Remove whitespace and common OCR artifacts
         let cleaned = text.trim();
-
-        // Try to extract just numbers/alphanumeric sequences
-        // Barcode text is usually a continuous string without spaces
         const lines = cleaned.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-        // Find the line that looks most like a barcode (longest alphanumeric sequence)
         let bestMatch = '';
         for (const line of lines) {
-            // Remove spaces and special characters that might be OCR errors
             const cleanLine = line.replace(/[\s\-\.]/g, '');
-            // Check if it's alphanumeric
             if (/^[A-Za-z0-9]+$/.test(cleanLine) && cleanLine.length > bestMatch.length) {
                 bestMatch = cleanLine;
             }
@@ -63,26 +106,11 @@ export function ComparePage() {
     const detectBarcodeType = (text: string): BarcodeType => {
         const cleaned = text.replace(/\s/g, '');
 
-        // EAN-13: exactly 13 digits
-        if (/^\d{13}$/.test(cleaned)) {
-            return 'EAN13';
-        }
-        // EAN-8: exactly 8 digits
-        if (/^\d{8}$/.test(cleaned)) {
-            return 'EAN8';
-        }
-        // Numbers only - suggest CODE128C
-        if (/^\d+$/.test(cleaned) && cleaned.length % 2 === 0) {
-            return 'CODE128C';
-        }
-        // Uppercase only with special chars - suggest CODE128A
-        if (/^[A-Z0-9\s\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_]+$/.test(cleaned)) {
-            return 'CODE128A';
-        }
-        // Mixed case - suggest CODE128B
-        if (/[a-z]/.test(cleaned)) {
-            return 'CODE128B';
-        }
+        if (/^\d{13}$/.test(cleaned)) return 'EAN13';
+        if (/^\d{8}$/.test(cleaned)) return 'EAN8';
+        if (/^\d+$/.test(cleaned) && cleaned.length % 2 === 0) return 'CODE128C';
+        if (/^[A-Z0-9\s\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_]+$/.test(cleaned)) return 'CODE128A';
+        if (/[a-z]/.test(cleaned)) return 'CODE128B';
 
         return 'CODE128';
     };
@@ -94,10 +122,13 @@ export function ComparePage() {
         setError('');
 
         try {
+            // Get original image dimensions
+            const originalDimensions = await getImageDimensions(imageDataUrl);
+
             // Perform OCR
             const ocrResult = await Tesseract.recognize(
                 imageDataUrl,
-                'eng+kor', // Support both English and Korean
+                'eng+kor',
                 {
                     logger: (m) => {
                         if (m.status === 'recognizing text') {
@@ -117,11 +148,9 @@ export function ComparePage() {
 
             setManualText(recognizedText);
 
-            // Auto-detect barcode type
             const detectedType = detectBarcodeType(recognizedText);
             setBarcodeType(detectedType);
 
-            // Generate barcode
             setStatus('generating');
             setStatusMessage('바코드 생성 중...');
 
@@ -135,8 +164,17 @@ export function ComparePage() {
                 throw new Error('바코드 생성에 실패했습니다. 인식된 텍스트가 선택한 바코드 형식에 맞지 않을 수 있습니다.');
             }
 
+            // Get generated barcode dimensions for auto-fit
+            const genDimensions = await getImageDimensions(generatedBarcode);
+            setGeneratedDimensions(genDimensions);
+
+            // Calculate and set optimal scale
+            const optimalScale = calculateOptimalScale(originalDimensions, genDimensions);
+            setSizeScale(optimalScale);
+
             setResult({
                 originalImage: imageDataUrl,
+                originalDimensions,
                 recognizedText,
                 generatedBarcode,
                 barcodeType: detectedType,
@@ -219,6 +257,12 @@ export function ComparePage() {
                 throw new Error('바코드 생성에 실패했습니다.');
             }
 
+            const genDimensions = await getImageDimensions(generatedBarcode);
+            setGeneratedDimensions(genDimensions);
+
+            const optimalScale = calculateOptimalScale(result.originalDimensions, genDimensions);
+            setSizeScale(optimalScale);
+
             setResult({
                 ...result,
                 recognizedText: manualText.trim(),
@@ -239,9 +283,20 @@ export function ComparePage() {
         setError('');
         setManualText('');
         setProgress(0);
+        setSizeScale(100);
+        setGeneratedDimensions(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+    };
+
+    // Calculate scaled dimensions
+    const getScaledStyle = () => {
+        if (!generatedDimensions) return {};
+        return {
+            width: `${(generatedDimensions.width * sizeScale) / 100}px`,
+            maxWidth: '100%'
+        };
     };
 
     return (
@@ -355,28 +410,110 @@ export function ComparePage() {
                     </section>
 
                     <section className="section glass-card comparison-section">
-                        <h3 className="section-title">비교</h3>
-
-                        <div className="comparison-container">
-                            <div className="comparison-item">
-                                <h4>📷 원본 이미지</h4>
-                                <div className="image-wrapper">
-                                    <img src={result.originalImage} alt="Original barcode" />
-                                </div>
-                            </div>
-
-                            <div className="comparison-divider">
-                                <span className="vs-badge">VS</span>
-                            </div>
-
-                            <div className="comparison-item">
-                                <h4>🔄 생성된 바코드</h4>
-                                <div className="image-wrapper generated">
-                                    <img src={result.generatedBarcode} alt="Generated barcode" />
-                                </div>
-                                <p className="barcode-text">{result.recognizedText}</p>
+                        <div className="comparison-header">
+                            <h3 className="section-title">비교</h3>
+                            <div className="compare-mode-toggle">
+                                <button
+                                    className={`mode-btn ${compareMode === 'side-by-side' ? 'active' : ''}`}
+                                    onClick={() => setCompareMode('side-by-side')}
+                                >
+                                    ↔️ 나란히
+                                </button>
+                                <button
+                                    className={`mode-btn ${compareMode === 'overlay' ? 'active' : ''}`}
+                                    onClick={() => setCompareMode('overlay')}
+                                >
+                                    🔀 겹쳐서
+                                </button>
                             </div>
                         </div>
+
+                        {/* Size adjustment controls */}
+                        <div className="size-controls">
+                            <div className="size-control-row">
+                                <span className="size-label">생성 바코드 크기: {sizeScale}%</span>
+                                <button className="btn btn-sm btn-outline" onClick={handleAutoFit}>
+                                    📐 자동 맞춤
+                                </button>
+                            </div>
+                            <input
+                                type="range"
+                                className="size-slider"
+                                value={sizeScale}
+                                onChange={(e) => setSizeScale(Number(e.target.value))}
+                                min={50}
+                                max={200}
+                            />
+                            <div className="size-info">
+                                <span>원본: {result.originalDimensions.width}×{result.originalDimensions.height}px</span>
+                                {generatedDimensions && (
+                                    <span>생성: {Math.round(generatedDimensions.width * sizeScale / 100)}×{Math.round(generatedDimensions.height * sizeScale / 100)}px</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {compareMode === 'side-by-side' ? (
+                            <div className="comparison-container">
+                                <div className="comparison-item">
+                                    <h4>📷 원본 이미지</h4>
+                                    <div className="image-wrapper">
+                                        <img src={result.originalImage} alt="Original barcode" />
+                                    </div>
+                                </div>
+
+                                <div className="comparison-divider">
+                                    <span className="vs-badge">VS</span>
+                                </div>
+
+                                <div className="comparison-item">
+                                    <h4>🔄 생성된 바코드</h4>
+                                    <div className="image-wrapper generated">
+                                        <img
+                                            src={result.generatedBarcode}
+                                            alt="Generated barcode"
+                                            style={getScaledStyle()}
+                                        />
+                                    </div>
+                                    <p className="barcode-text">{result.recognizedText}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="overlay-container">
+                                <div className="overlay-controls">
+                                    <span className="overlay-label">📷 원본</span>
+                                    <input
+                                        type="range"
+                                        className="overlay-slider"
+                                        value={overlayOpacity}
+                                        onChange={(e) => setOverlayOpacity(Number(e.target.value))}
+                                        min={0}
+                                        max={100}
+                                    />
+                                    <span className="overlay-label">🔄 생성</span>
+                                </div>
+                                <p className="overlay-hint">
+                                    슬라이더를 조절하여 두 바코드를 비교하세요 (투명도: {overlayOpacity}%)
+                                </p>
+
+                                <div className="overlay-wrapper">
+                                    <div className="overlay-layer original">
+                                        <img src={result.originalImage} alt="Original barcode" />
+                                    </div>
+                                    <div
+                                        className="overlay-layer generated"
+                                        style={{ opacity: overlayOpacity / 100 }}
+                                    >
+                                        <img
+                                            src={result.generatedBarcode}
+                                            alt="Generated barcode"
+                                            style={getScaledStyle()}
+                                        />
+                                    </div>
+                                </div>
+
+                                <p className="barcode-text">{result.recognizedText}</p>
+                            </div>
+                        )}
                     </section>
 
                     <div className="action-buttons">
@@ -393,12 +530,13 @@ export function ComparePage() {
                     <ul>
                         <li>바코드 아래의 숫자/문자가 선명하게 보이는 이미지를 사용하세요</li>
                         <li>텍스트가 잘못 인식된 경우 직접 수정 후 "재생성" 버튼을 클릭하세요</li>
-                        <li>바코드 타입이 자동으로 감지되지만, 필요시 수동으로 변경할 수 있습니다</li>
-                        <li>EAN-13/EAN-8은 정확한 자릿수(13자리/8자리)가 필요합니다</li>
-                        <li>Code128-C는 짝수 개의 숫자만 허용됩니다</li>
+                        <li><strong>"📐 자동 맞춤"</strong> 버튼으로 원본과 비슷한 크기로 자동 조절</li>
+                        <li><strong>"🔀 겹쳐서"</strong> 모드에서 투명도 슬라이더로 차이 확인</li>
+                        <li>슬라이더로 생성된 바코드 크기를 수동 미세 조절 가능</li>
                     </ul>
                 </details>
             </div>
         </div>
     );
 }
+
