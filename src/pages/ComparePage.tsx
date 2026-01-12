@@ -118,8 +118,9 @@ const autoDeskew = async (dataUrl: string): Promise<string> => {
                 }
             }
 
-            // Final output
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Final output with white background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Calculate new dimensions to avoid cropping
             const radians = (bestAngle * Math.PI) / 180;
@@ -128,6 +129,10 @@ const autoDeskew = async (dataUrl: string): Promise<string> => {
 
             canvas.width = newWidth;
             canvas.height = newHeight;
+
+            // Refill white after resizing
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.translate(canvas.width / 2, canvas.height / 2);
             ctx.rotate(radians);
@@ -147,6 +152,7 @@ export function ComparePage() {
     const [barcodeType, setBarcodeType] = useState<BarcodeType>('CODE128');
     const [manualText, setManualText] = useState('');
     const [progress, setProgress] = useState(0);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     // Compare mode and size adjustment states
     const [compareMode, setCompareMode] = useState<CompareMode>('side-by-side');
@@ -222,6 +228,7 @@ export function ComparePage() {
         try {
             // Auto deskew before OCR
             const deskewedDataUrl = await autoDeskew(imageDataUrl);
+            setPreviewUrl(deskewedDataUrl);
 
             setStatusMessage('바코드 텍스트 인식 중...');
 
@@ -381,6 +388,7 @@ export function ComparePage() {
         setError('');
         setManualText('');
         setProgress(0);
+        setPreviewUrl(null);
         setSizeScale(100);
         setGeneratedDimensions(null);
         setOffsetX(0);
@@ -453,6 +461,15 @@ export function ComparePage() {
                                     className="progress-fill"
                                     style={{ width: `${progress}%` }}
                                 ></div>
+                            </div>
+                        )}
+
+                        {previewUrl && (
+                            <div className="processing-preview">
+                                <p className="preview-label">✔️ 수평 보정 완료</p>
+                                <div className="preview-image-wrapper">
+                                    <img src={previewUrl} alt="Deskewed preview" />
+                                </div>
                             </div>
                         )}
                     </div>
