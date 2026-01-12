@@ -5,6 +5,7 @@ import type { BarcodeType } from '../utils/barcodeGenerator';
 import './ComparePage.css';
 
 type ProcessingStatus = 'idle' | 'uploading' | 'recognizing' | 'generating' | 'complete' | 'error';
+type CompareMode = 'side-by-side' | 'overlay';
 
 interface CompareResult {
     originalImage: string;
@@ -32,6 +33,10 @@ export function ComparePage() {
     const [barcodeType, setBarcodeType] = useState<BarcodeType>('CODE128');
     const [manualText, setManualText] = useState('');
     const [progress, setProgress] = useState(0);
+
+    // Compare mode states
+    const [compareMode, setCompareMode] = useState<CompareMode>('side-by-side');
+    const [overlayOpacity, setOverlayOpacity] = useState(50);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -355,28 +360,89 @@ export function ComparePage() {
                     </section>
 
                     <section className="section glass-card comparison-section">
-                        <h3 className="section-title">비교</h3>
-
-                        <div className="comparison-container">
-                            <div className="comparison-item">
-                                <h4>📷 원본 이미지</h4>
-                                <div className="image-wrapper">
-                                    <img src={result.originalImage} alt="Original barcode" />
-                                </div>
-                            </div>
-
-                            <div className="comparison-divider">
-                                <span className="vs-badge">VS</span>
-                            </div>
-
-                            <div className="comparison-item">
-                                <h4>🔄 생성된 바코드</h4>
-                                <div className="image-wrapper generated">
-                                    <img src={result.generatedBarcode} alt="Generated barcode" />
-                                </div>
-                                <p className="barcode-text">{result.recognizedText}</p>
+                        <div className="comparison-header">
+                            <h3 className="section-title">비교</h3>
+                            <div className="compare-mode-toggle">
+                                <button
+                                    className={`mode-btn ${compareMode === 'side-by-side' ? 'active' : ''}`}
+                                    onClick={() => setCompareMode('side-by-side')}
+                                >
+                                    ↔️ 나란히
+                                </button>
+                                <button
+                                    className={`mode-btn ${compareMode === 'overlay' ? 'active' : ''}`}
+                                    onClick={() => setCompareMode('overlay')}
+                                >
+                                    🔀 겹쳐서
+                                </button>
                             </div>
                         </div>
+
+                        {compareMode === 'side-by-side' ? (
+                            <div className="comparison-container">
+                                <div className="comparison-item">
+                                    <h4>📷 원본 이미지</h4>
+                                    <div className="image-wrapper">
+                                        <img src={result.originalImage} alt="Original barcode" />
+                                    </div>
+                                </div>
+
+                                <div className="comparison-divider">
+                                    <span className="vs-badge">VS</span>
+                                </div>
+
+                                <div className="comparison-item">
+                                    <h4>🔄 생성된 바코드</h4>
+                                    <div className="image-wrapper generated">
+                                        <img src={result.generatedBarcode} alt="Generated barcode" />
+                                    </div>
+                                    <p className="barcode-text">{result.recognizedText}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="overlay-container">
+                                <div className="overlay-controls">
+                                    <span className="overlay-label">📷 원본</span>
+                                    <input
+                                        type="range"
+                                        className="overlay-slider"
+                                        value={overlayOpacity}
+                                        onChange={(e) => setOverlayOpacity(Number(e.target.value))}
+                                        min={0}
+                                        max={100}
+                                    />
+                                    <span className="overlay-label">🔄 생성</span>
+                                </div>
+                                <p className="overlay-hint">
+                                    슬라이더를 조절하여 두 바코드를 비교하세요 (투명도: {overlayOpacity}%)
+                                </p>
+
+                                <div className="overlay-wrapper">
+                                    <div className="overlay-layer original">
+                                        <img src={result.originalImage} alt="Original barcode" />
+                                    </div>
+                                    <div
+                                        className="overlay-layer generated"
+                                        style={{ opacity: overlayOpacity / 100 }}
+                                    >
+                                        <img src={result.generatedBarcode} alt="Generated barcode" />
+                                    </div>
+                                </div>
+
+                                <div className="overlay-legend">
+                                    <div className="legend-item">
+                                        <span className="legend-color original"></span>
+                                        <span>원본: 완전히 보임 (0%)</span>
+                                    </div>
+                                    <div className="legend-item">
+                                        <span className="legend-color generated"></span>
+                                        <span>생성: 완전히 보임 (100%)</span>
+                                    </div>
+                                </div>
+
+                                <p className="barcode-text">{result.recognizedText}</p>
+                            </div>
+                        )}
                     </section>
 
                     <div className="action-buttons">
@@ -393,12 +459,13 @@ export function ComparePage() {
                     <ul>
                         <li>바코드 아래의 숫자/문자가 선명하게 보이는 이미지를 사용하세요</li>
                         <li>텍스트가 잘못 인식된 경우 직접 수정 후 "재생성" 버튼을 클릭하세요</li>
+                        <li><strong>"겹쳐서" 모드</strong>: 슬라이더로 투명도를 조절하여 차이를 확인하세요</li>
                         <li>바코드 타입이 자동으로 감지되지만, 필요시 수동으로 변경할 수 있습니다</li>
                         <li>EAN-13/EAN-8은 정확한 자릿수(13자리/8자리)가 필요합니다</li>
-                        <li>Code128-C는 짝수 개의 숫자만 허용됩니다</li>
                     </ul>
                 </details>
             </div>
         </div>
     );
 }
+
