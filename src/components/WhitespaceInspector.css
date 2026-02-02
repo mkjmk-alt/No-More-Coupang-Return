@@ -9,13 +9,18 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 16px;
     font-weight: 600;
-    line-height: 2;
-    /* Increased for labels */
+    line-height: 2.2;
+    /* Extra space for labels */
     color: var(--text-primary);
     word-break: break-all;
     white-space: pre-wrap;
-    display: block;
-    /* Changed back to block for natural word wrapping */
+    display: flex;
+    /* Essential for horizontal flow in flex parents */
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .normal-char {

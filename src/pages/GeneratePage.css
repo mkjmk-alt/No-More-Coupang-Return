@@ -69,6 +69,11 @@
 
 .preview-meta {
     margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center the whole meta block */
+    width: 100%;
 }
 
 .type-badge {
@@ -159,6 +164,9 @@
 .item-left div {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    /* Ensure children don't center-stack vertically */
+    width: 100%;
 }
 
 .arrow {
