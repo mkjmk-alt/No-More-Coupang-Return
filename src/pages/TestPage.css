@@ -1,240 +1,99 @@
 .test-page {
-    padding-top: 1.5rem;
-    padding-bottom: 2rem;
+    padding-top: 32px;
+    padding-bottom: 120px;
 }
 
-.page-header {
-    margin-bottom: 1.5rem;
-}
-
-.page-header h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-}
-
-/* 옵션 그리드 */
-.options-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.option-card {
-    padding: 1rem;
-}
-
-.option-header {
+.history-page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
 }
 
-.option-header h3 {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.option-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.btn-link {
+.clear-link {
     background: none;
     border: none;
-    color: var(--accent-purple);
+    color: #e53e3e;
+    font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-}
-
-.btn-link:hover {
     text-decoration: underline;
 }
 
-.option-list {
+.history-card {
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
 }
 
-.option-grid-small {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-}
-
-.checkbox-item {
+.history-card-top {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.8rem;
+    gap: 16px;
 }
 
-.checkbox-item input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent-purple);
-}
-
-.checkbox-item-small {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    cursor: pointer;
-    font-size: 0.75rem;
-}
-
-.checkbox-item-small input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    accent-color: var(--accent-purple);
-}
-
-/* 버전 그리드 */
-.version-grid {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-    max-height: 150px;
-    overflow-y: auto;
-    padding: 0.5rem;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-}
-
-/* 생성 섹션 */
-.generate-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.5rem;
-    text-align: center;
-}
-
-.generate-info {
-    font-size: 0.9rem;
-}
-
-.btn-lg {
-    padding: 1rem 2rem;
-    font-size: 1rem;
-}
-
-/* 진행률 */
-.progress-section {
-    margin: 1.5rem 0;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 8px;
+.type-icon-box {
+    width: 44px;
+    height: 44px;
     background: var(--bg-secondary);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+}
+
+.history-main-info {
+    flex: 1;
     overflow: hidden;
 }
 
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-    transition: width 0.3s ease;
-}
-
-/* 결과 섹션 */
-.results-section {
-    margin-top: 1.5rem;
-}
-
-.results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.results-header h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-/* QR 그리드 */
-.qr-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-}
-
-.qr-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.qr-card img {
-    width: 100%;
-    max-width: 120px;
-    height: auto;
-    background: white;
-    border-radius: var(--radius-sm);
-}
-
-.qr-info {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    justify-content: center;
-}
-
-.qr-info .badge {
-    font-size: 0.65rem;
-    padding: 0.15rem 0.4rem;
-}
-
-.qr-card .btn-sm {
-    padding: 0.35rem 0.75rem;
-    font-size: 0.75rem;
-    width: 100%;
-}
-
-.error-card {
-    border-color: #ef4444;
-    opacity: 0.8;
-}
-
-.qr-error-placeholder {
-    width: 100%;
-    height: 120px;
-    background: #fee2e2;
-    color: #ef4444;
-    border-radius: var(--radius-sm);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 0.5rem;
-    gap: 0.25rem;
-}
-
-.qr-error-placeholder span {
+.history-value {
     font-weight: 700;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.qr-error-placeholder small {
-    font-size: 0.65rem;
-    line-height: 1.2;
+.history-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.history-card-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.mini-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mini-btn:hover {
+    background: var(--bg-tertiary);
+}
+
+.mini-btn .material-symbols-outlined {
+    font-size: 18px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 0;
+}
+
+.emoji {
+    font-size: 64px;
+    color: var(--border);
+    margin-bottom: 16px;
 }

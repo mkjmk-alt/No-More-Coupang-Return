@@ -6,6 +6,9 @@
 
 .main-content {
     flex: 1;
-    padding-bottom: 80px;
-    /* Space for Bottom Nav */
+    width: 100%;
+    /* Ensure content doesn't get hidden behind fixed navs */
+    padding-bottom: 20px;
 }
+
+/* Page transitions could go here */

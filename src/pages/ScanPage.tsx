@@ -7,7 +7,7 @@ import './ScanPage.css';
 export function ScanPage() {
     const [isScanning, setIsScanning] = useState(false);
     const [error, setError] = useState('');
-    const scannerRef = useRef<any>(null); // Use any to bypass complex scanner type mismatch
+    const scannerRef = useRef<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
 
@@ -22,7 +22,7 @@ export function ScanPage() {
                     await scannerRef.current.start(
                         (result: any) => {
                             addScanToHistory(result.text, result.format);
-                            navigate('/');
+                            navigate('/test'); // Redirect to history/results
                         },
                         (err: string) => {
                             setError(err);
@@ -44,7 +44,7 @@ export function ScanPage() {
         const response = await scanImageFile(file);
         if (response.success && response.result) {
             addScanToHistory(response.result.text, response.result.format);
-            navigate('/');
+            navigate('/test');
         } else {
             setError('COULD NOT RECOGNIZE BARCODE');
         }
@@ -58,23 +58,30 @@ export function ScanPage() {
     }, []);
 
     return (
-        <div className="scan-page container">
-            <header className="scan-header">
-                <button className="back-btn" onClick={() => navigate('/')}>
-                    <span className="material-symbols-outlined">arrow_back</span>
-                </button>
-                <h2 className="section-title">SCAN BARCODE</h2>
-                <div style={{ width: 40 }}></div>
-            </header>
+        <div className="scan-page animate-fade">
+            <div className="scan-overlay">
+                <div className="scan-frame">
+                    <div className="scan-corner top-left"></div>
+                    <div className="scan-corner top-right"></div>
+                    <div className="scan-corner bottom-left"></div>
+                    <div className="scan-corner bottom-right"></div>
+                    <div className="scan-line"></div>
+                </div>
 
-            <div id="scanner-container" className="scanner-view">
-                {!isScanning && !error && <div className="scanner-placeholder">INITIALIZING...</div>}
-                {error && <div className="scanner-error">{error}</div>}
+                <div className="scan-tip">
+                    <p>Align barcode within the frame</p>
+                </div>
             </div>
 
-            <div className="scan-actions">
-                <button className="btn btn-white" onClick={() => fileInputRef.current?.click()}>
-                    <span className="material-symbols-outlined">image</span> UPLOAD FROM GALLERY
+            <div id="scanner-container" className="scanner-viewport">
+                {!isScanning && !error && <div className="scanner-status">Initializing...</div>}
+                {error && <div className="scanner-status error">{error}</div>}
+            </div>
+
+            <div className="scan-footer container">
+                <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
+                    <span className="material-symbols-outlined">image</span>
+                    Upload Image
                 </button>
                 <input
                     type="file"

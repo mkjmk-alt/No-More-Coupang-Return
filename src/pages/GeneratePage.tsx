@@ -8,16 +8,15 @@ import type { BarcodeType } from '../utils/barcodeGenerator';
 import {
     getScanHistory,
     addScanToHistory,
-    clearScanHistory,
 } from '../utils/helpers';
 import type { ScanHistoryItem } from '../utils/helpers';
 import './GeneratePage.css';
 
 const BARCODE_TYPES: { value: BarcodeType; label: string }[] = [
-    { value: 'CODE128', label: 'CODE-128' },
+    { value: 'CODE128', label: 'CODE 128' },
     { value: 'QR', label: 'QR CODE' },
-    { value: 'EAN13', label: 'EAN-13' },
-    { value: 'EAN8', label: 'EAN-8' },
+    { value: 'EAN13', label: 'EAN 13' },
+    { value: 'EAN8', label: 'EAN 8' },
 ];
 
 export function GeneratePage() {
@@ -33,7 +32,7 @@ export function GeneratePage() {
 
     const handleGenerate = async () => {
         if (!inputText.trim()) {
-            setError('ENTER VALUE...');
+            setError('Please enter some text');
             return;
         }
 
@@ -42,7 +41,7 @@ export function GeneratePage() {
 
         try {
             if (barcodeType === 'QR') {
-                img = await generateQRCode(inputText, { width: 250, margin: 2 });
+                img = await generateQRCode(inputText, { width: 300, margin: 2 });
             } else {
                 img = await generateBarcode(inputText, barcodeType, { fontSize: 20 });
             }
@@ -51,43 +50,11 @@ export function GeneratePage() {
                 setBarcodeImage(img);
                 addScanToHistory(inputText, barcodeType);
                 setHistory(getScanHistory());
-                // Scroll to result
-                setTimeout(() => {
-                    document.getElementById('result-card')?.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
             } else {
-                setError('GENERATION FAILED');
+                setError('Failed to generate. Check your input.');
             }
         } catch (e) {
-            setError('INVALID INPUT');
-        }
-    };
-
-    const handleCopy = async () => {
-        if (inputText) {
-            await navigator.clipboard.writeText(inputText);
-            alert('COPIED TO CLIPBOARD');
-        }
-    };
-
-    const handleShare = async () => {
-        if (barcodeImage) {
-            try {
-                const response = await fetch(barcodeImage);
-                const blob = await response.blob();
-                const file = new File([blob], 'barcode.png', { type: 'image/png' });
-                if (navigator.share) {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Barcode',
-                        text: inputText
-                    });
-                } else {
-                    alert('SHARING NOT SUPPORTED ON THIS BROWSER');
-                }
-            } catch (e) {
-                console.error(e);
-            }
+            setError('Invalid characters for this format');
         }
     };
 
@@ -97,49 +64,35 @@ export function GeneratePage() {
         }
     };
 
-    const handleClearHistory = () => {
-        if (window.confirm('CLEAR ALL HISTORY?')) {
-            clearScanHistory();
-            setHistory([]);
-        }
-    };
-
-    const getTimeLabel = (timestamp: number) => {
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 0) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        if (diffDays === 1) return 'YESTERDAY';
-        if (diffDays < 7) return `${diffDays} DAYS AGO`;
-        return date.toLocaleDateString();
-    };
+    const copyToClipboard = async () => {
+        await navigator.clipboard.writeText(inputText);
+        alert('Copied to clipboard');
+    }
 
     return (
-        <div className="generate-page container">
-            {/* Generate Input Section */}
-            <section className="generate-section animate-fade-in">
-                <h2 className="section-title">GENERATE NEW</h2>
+        <div className="generate-page container animate-fade">
+            <section className="hero-section">
+                <h2>Create something new</h2>
+                <p className="text-muted">Enter a value to generate a professional barcode or QR code instantly.</p>
+            </section>
 
-                <div className="input-group">
-                    <div className="input-container">
-                        <input
-                            type="text"
-                            className="input-main"
-                            value={inputText}
-                            onChange={(e) => setInputText(e.target.value)}
-                            placeholder="ENTER VALUE..."
-                            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                        />
-                        <span className="material-symbols-outlined input-icon">qr_code_scanner</span>
-                    </div>
+            <div className="main-creation-card mt-3">
+                <div className="input-with-label">
+                    <input
+                        type="text"
+                        className="input-field"
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        placeholder="e.g. 123456789"
+                        onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                    />
                 </div>
 
-                <div className="type-selector">
+                <div className="type-chips-wrapper mt-2">
                     {BARCODE_TYPES.map(type => (
                         <button
                             key={type.value}
-                            className={`type-chip ${barcodeType === type.value ? 'active' : ''}`}
+                            className={`type-chip-modern ${barcodeType === type.value ? 'active' : ''}`}
                             onClick={() => setBarcodeType(type.value)}
                         >
                             {type.label}
@@ -147,83 +100,61 @@ export function GeneratePage() {
                     ))}
                 </div>
 
-                <button className="btn btn-black create-btn" onClick={handleGenerate}>
-                    CREATE BARCODE <span className="material-symbols-outlined">arrow_forward</span>
+                <button className="btn btn-primary mt-3" onClick={handleGenerate}>
+                    <span className="material-symbols-outlined">add</span>
+                    Generate Barcode
                 </button>
-                {error && <p className="error-text">{error}</p>}
-            </section>
+                {error && <p className="error-msg mt-1">{error}</p>}
+            </div>
 
-            {/* Result Section */}
             {barcodeImage && (
-                <section id="result-card" className="result-section animate-fade-in">
-                    <div className="result-card">
-                        <div className="barcode-display">
-                            <img src={barcodeImage} alt="Generated" />
-                        </div>
-                        <div className="result-info">
-                            <div className="result-value">{inputText}</div>
-                            <div className="result-type">{barcodeType}</div>
-                        </div>
-                        <div className="result-actions">
-                            <button className="btn btn-white action-btn" onClick={handleCopy}>
-                                <span className="material-symbols-outlined">content_copy</span> COPY
-                            </button>
-                            <button className="btn btn-white action-btn" onClick={handleShare}>
-                                <span className="material-symbols-outlined">share</span> SHARE
-                            </button>
-                            <button className="btn btn-black action-btn" onClick={handleDownload}>
-                                <span className="material-symbols-outlined">download</span> SAVE
-                            </button>
-                        </div>
+                <div className="result-preview-card mt-3 card animate-fade">
+                    <div className="preview-image-box">
+                        <img src={barcodeImage} alt="Generated result" />
                     </div>
-                </section>
+                    <div className="preview-meta">
+                        <span className="type-badge">{barcodeType}</span>
+                        <h3 className="preview-val">{inputText}</h3>
+                    </div>
+                    <div className="preview-actions">
+                        <button className="btn btn-secondary" onClick={copyToClipboard}>
+                            <span className="material-symbols-outlined">content_copy</span>
+                            Copy
+                        </button>
+                        <button className="btn btn-primary" onClick={handleDownload}>
+                            <span className="material-symbols-outlined">download</span>
+                            Save
+                        </button>
+                    </div>
+                </div>
             )}
 
-            {/* History Section */}
-            <section className="history-section">
-                <div className="history-header">
-                    <h2 className="section-title">RECENT HISTORY</h2>
-                    {history.length > 0 && (
-                        <button className="clear-btn" onClick={handleClearHistory}>CLEAR ALL</button>
-                    )}
+            <section className="quick-history-section mt-3">
+                <div className="section-header">
+                    <h3>Recent Creations</h3>
+                    <button className="text-btn" onClick={() => window.location.href = '/test'}>View All</button>
                 </div>
 
-                <div className="history-list">
-                    {history.length === 0 ? (
-                        <div className="empty-history">
-                            <span className="material-symbols-outlined">history</span>
-                            <p>NO RECENT SCANS</p>
-                        </div>
-                    ) : (
-                        history.map((item) => (
-                            <div
-                                key={item.id}
-                                className="list-item"
-                                onClick={() => {
-                                    setInputText(item.value);
-                                    setBarcodeType(item.type as BarcodeType);
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
-                            >
-                                <div className="list-item-icon">
-                                    <span className="material-symbols-outlined">
-                                        {item.type === 'QR' ? 'qr_code_2' : 'barcode'}
-                                    </span>
-                                </div>
-                                <div className="list-item-content">
-                                    <div className="list-item-title">{item.value}</div>
-                                    <div className="list-item-subtitle">{item.type} • {getTimeLabel(item.timestamp)}</div>
+                <div className="minimal-history-list mt-2">
+                    {history.slice(0, 3).map(item => (
+                        <div key={item.id} className="minimal-history-item" onClick={() => setInputText(item.value)}>
+                            <div className="item-left">
+                                <span className="material-symbols-outlined">
+                                    {item.type === 'QR' ? 'qr_code_2' : 'barcode'}
+                                </span>
+                                <div>
+                                    <p className="item-val">{item.value}</p>
+                                    <p className="item-meta">{item.type}</p>
                                 </div>
                             </div>
-                        ))
+                            <span className="material-symbols-outlined arrow">chevron_right</span>
+                        </div>
+                    ))}
+                    {history.length === 0 && (
+                        <p className="empty-text text-center mt-3 text-muted">No history yet.</p>
                     )}
                 </div>
             </section>
-
-            {/* FAB Scan Button */}
-            <div className="fab" onClick={() => (window.location.href = '/scan')}>
-                <span className="material-symbols-outlined">qr_code_scanner</span>
-            </div>
         </div>
     );
 }

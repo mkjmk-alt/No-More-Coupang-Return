@@ -1,25 +1,64 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './Header.css';
 
 export function Header() {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const getTitle = () => {
+        switch (location.pathname) {
+            case '/': return 'Dashboard';
+            case '/scan': return 'Scanner';
+            case '/test': return 'History';
+            case '/compare': return 'Settings';
+            default: return 'Barcode App';
+        }
+    };
 
     return (
-        <header className="main-header">
-            <button className="header-btn" onClick={() => { }}>
-                <span className="material-symbols-outlined">menu</span>
-            </button>
-            <h1 className="header-title" onClick={() => navigate('/')}>BARCODE GEN</h1>
-            <button className="header-btn" onClick={() => navigate('/compare')}>
-                <span className="material-symbols-outlined">settings</span>
-            </button>
+        <header className="app-header">
+            <div className="header-inner container">
+                <div className="header-logo" onClick={() => navigate('/')}>
+                    <span className="logo-dot"></span>
+                    <h1>{getTitle()}</h1>
+                </div>
+                <button className="icon-btn settings-trigger" onClick={() => navigate('/compare')}>
+                    <span className="material-symbols-outlined">settings</span>
+                </button>
+            </div>
         </header>
     );
 }
 
 export function BottomNav() {
-    // We might not need a bottom nav if we follow the screenshot's single-page or FAB approach.
-    // However, I'll keep it as a placeholder or remove it if requested.
-    // For now, let's keep it but style it minimally or just remove it to match the screenshot.
-    return null;
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    return (
+        <nav className="app-bottom-nav">
+            <div className="nav-inner container">
+                <button
+                    className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
+                    onClick={() => navigate('/')}
+                >
+                    <span className="material-symbols-outlined">grid_view</span>
+                    <span>Home</span>
+                </button>
+                <button
+                    className={`nav-item ${location.pathname === '/scan' ? 'active' : ''}`}
+                    onClick={() => navigate('/scan')}
+                >
+                    <span className="material-symbols-outlined">qr_code_scanner</span>
+                    <span>Scan</span>
+                </button>
+                <button
+                    className={`nav-item ${location.pathname === '/test' ? 'active' : ''}`}
+                    onClick={() => navigate('/test')}
+                >
+                    <span className="material-symbols-outlined">history</span>
+                    <span>Records</span>
+                </button>
+            </div>
+        </nav>
+    );
 }

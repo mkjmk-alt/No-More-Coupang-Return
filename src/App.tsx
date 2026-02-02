@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Header } from './components/Header';
+import { Header, BottomNav } from './components/Header';
 import { ScanPage } from './pages/ScanPage';
 import { GeneratePage } from './pages/GeneratePage';
 import { TestPage } from './pages/TestPage';
@@ -13,13 +13,13 @@ function App() {
         <Header />
         <main className="main-content">
           <Routes>
-            {/* Swapped default to GeneratePage to match the new dashboard feel */}
             <Route path="/" element={<GeneratePage />} />
             <Route path="/scan" element={<ScanPage />} />
             <Route path="/test" element={<TestPage />} />
             <Route path="/compare" element={<ComparePage />} />
           </Routes>
         </main>
+        <BottomNav />
       </div>
     </BrowserRouter>
   );
