@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Header } from './components/Header';
+import { Header, BottomNav } from './components/Header';
 import { ScanPage } from './pages/ScanPage';
 import { GeneratePage } from './pages/GeneratePage';
 import { TestPage } from './pages/TestPage';
@@ -19,6 +19,7 @@ function App() {
             <Route path="/compare" element={<ComparePage />} />
           </Routes>
         </main>
+        <BottomNav />
       </div>
     </BrowserRouter>
   );

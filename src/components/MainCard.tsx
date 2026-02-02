@@ -8,38 +8,50 @@ interface MainCardProps {
 
 export function MainCard({ onCameraScan, onPhotoCapture, onImageUpload }: MainCardProps) {
     return (
-        <div className="main-card gradient-card">
-            <h2 className="main-card-title">무엇을 스캔할까요?</h2>
-            <p className="main-card-subtitle">
-                카메라 또는 이미지를 통해<br />
-                숨겨진 정보를 확인하세요.
-            </p>
+        <div className="main-card-neo">
+            {/* Yellow Hero Card */}
+            <div className="hero-box">
+                <div className="barcode-graphic">
+                    <div className="bar bar-1"></div>
+                    <div className="bar bar-2"></div>
+                    <div className="bar bar-3"></div>
+                    <div className="bar bar-2"></div>
+                    <div className="bar bar-4"></div>
+                    <div className="bar bar-1"></div>
+                    <div className="bar bar-3"></div>
+                    <div className="bar bar-4"></div>
+                </div>
+                <h2>무엇을<br />스캔할까요?</h2>
+            </div>
 
-            <div className="main-card-actions">
-                <button className="btn btn-secondary" onClick={onCameraScan}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <circle cx="12" cy="13" r="4" />
-                    </svg>
-                    실시간 스캔
+            {/* Staggered Buttons */}
+            <div className="action-stack">
+                <button className="neo-stack-btn blue" onClick={onCameraScan}>
+                    <div className="icon-wrap">
+                        <span className="material-symbols-outlined">photo_camera</span>
+                    </div>
+                    <div className="btn-label-stack">
+                        <span>Scan</span>
+                        <span>Camera</span>
+                    </div>
                 </button>
 
-                <button className="btn btn-secondary" onClick={onPhotoCapture}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-                    </svg>
-                    사진 촬영
+                <button className="neo-stack-btn pink right" onClick={onPhotoCapture}>
+                    <div className="icon-wrap">
+                        <span className="material-symbols-outlined">qr_code_2</span>
+                    </div>
+                    <div className="btn-label-stack">
+                        <span>QR Code</span>
+                    </div>
                 </button>
 
-                <button className="btn btn-secondary" onClick={onImageUpload}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    사진 불러오기
+                <button className="neo-stack-btn green" onClick={onImageUpload}>
+                    <div className="icon-wrap">
+                        <span className="material-symbols-outlined">image</span>
+                    </div>
+                    <div className="btn-label-stack">
+                        <span>Gallery</span>
+                    </div>
                 </button>
             </div>
         </div>
