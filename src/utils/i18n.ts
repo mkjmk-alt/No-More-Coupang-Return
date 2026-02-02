@@ -5,11 +5,12 @@ export const translations = {
         nav: {
             home: '홈',
             scan: '스캔',
-            records: '최근 기록',
+            records: '내역',
             dashboard: '대시보드',
             scanner: '스캐너',
-            settings: '설정',
-            history: '검색 기록'
+            compare: '분석/비교',
+            settings: '비교 분석',
+            history: '활동 내역'
         },
         generate: {
             heroTitle: '새로운 바코드 생성',
@@ -77,7 +78,8 @@ export const translations = {
             records: 'Records',
             dashboard: 'Dashboard',
             scanner: 'Scanner',
-            settings: 'Settings',
+            compare: 'Analysis',
+            settings: 'Analysis',
             history: 'History'
         },
         generate: {

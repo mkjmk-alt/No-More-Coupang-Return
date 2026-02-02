@@ -11,8 +11,8 @@ export function Header() {
         switch (location.pathname) {
             case '/': return t.nav.dashboard;
             case '/scan': return t.nav.scanner;
-            case '/test': return t.nav.history;
-            case '/compare': return t.nav.settings;
+            case '/test': return t.nav.records;
+            case '/compare': return t.compare.title; // Use page title for nav title
             default: return 'Barcode App';
         }
     };
@@ -31,9 +31,7 @@ export function Header() {
                     >
                         {language === 'ko' ? 'EN' : 'KO'}
                     </button>
-                    <button className="icon-btn settings-trigger" onClick={() => navigate('/compare')}>
-                        <span className="material-symbols-outlined">settings</span>
-                    </button>
+                    {/* Settings icon removed as requested - moved to bottom nav */}
                 </div>
             </div>
         </header>
@@ -61,6 +59,13 @@ export function BottomNav() {
                 >
                     <span className="material-symbols-outlined">qr_code_scanner</span>
                     <span>{t.nav.scan}</span>
+                </button>
+                <button
+                    className={`nav-item ${location.pathname === '/compare' ? 'active' : ''}`}
+                    onClick={() => navigate('/compare')}
+                >
+                    <span className="material-symbols-outlined">analytics</span>
+                    <span>{t.nav.settings}</span>
                 </button>
                 <button
                     className={`nav-item ${location.pathname === '/test' ? 'active' : ''}`}
