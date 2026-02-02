@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getScanHistory, clearScanHistory } from '../utils/helpers';
 import type { ScanHistoryItem } from '../utils/helpers';
 import { useTranslation } from '../utils/LanguageContext';
+import { WhitespaceInspector } from '../components/WhitespaceInspector';
 import './TestPage.css';
 
 export function TestPage() {
@@ -53,7 +54,7 @@ export function TestPage() {
                                 </span>
                             </div>
                             <div className="history-main-info">
-                                <p className="history-value">{item.value}</p>
+                                <WhitespaceInspector text={item.value} />
                                 <p className="history-sub">{item.type} • {formatDate(item.timestamp)}</p>
                             </div>
                         </div>

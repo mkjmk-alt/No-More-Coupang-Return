@@ -114,7 +114,6 @@ export function GeneratePage() {
                     </div>
                     <div className="preview-meta">
                         <span className="type-badge">{barcodeType}</span>
-                        <h3 className="preview-val">{inputText}</h3>
                         <WhitespaceInspector text={inputText} />
                     </div>
                     <div className="preview-actions">
@@ -144,7 +143,6 @@ export function GeneratePage() {
                                     {item.type === 'QR' ? 'qr_code_2' : 'barcode'}
                                 </span>
                                 <div>
-                                    <p className="item-val">{item.value}</p>
                                     <WhitespaceInspector text={item.value} />
                                     <p className="item-meta">{item.type}</p>
                                 </div>
