@@ -1,8 +1,8 @@
 .whitespace-inspector {
     width: 100%;
     margin: 4px 0;
-    text-align: left;
-    /* Ensure left alignment for sentence flow */
+    display: block;
+    /* Explicitly block */
 }
 
 .inspector-display-text {
@@ -10,31 +10,29 @@
     font-size: 16px;
     font-weight: 600;
     line-height: 2.2;
-    /* Extra space for labels */
+    /* Spacing for labels */
     color: var(--text-primary);
     word-break: break-all;
     white-space: pre-wrap;
-    display: flex;
-    /* Essential for horizontal flow in flex parents */
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: flex-start;
-    text-align: left;
+    display: block !important;
+    /* Force block flow, NOT flex */
+    text-align: inherit;
 }
 
 .normal-char {
-    display: inline;
+    display: inline !important;
+    /* Force inline flow like a sentence */
     letter-spacing: -0.01em;
 }
 
 .invisible-char-highlight {
-    display: inline-block;
+    display: inline-block !important;
+    /* Inline-block to allow padding/highlight */
     background: #ff4d4d;
     /* Fluorescent Red */
     color: white;
     padding: 0 4px;
-    margin: 0 2px;
+    margin: 0 1px;
     border-radius: 3px;
     position: relative;
     vertical-align: baseline;
@@ -45,13 +43,14 @@
     font-size: 14px;
 }
 
+/* Character label (TAB, LF, etc.) */
 .char-label {
     position: absolute;
-    bottom: -15px;
+    bottom: -16px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 8px;
-    font-weight: 900;
+    font-weight: 800;
     color: #ff4d4d;
     background: white;
     padding: 0 2px;
@@ -60,12 +59,14 @@
     line-height: 1;
     pointer-events: none;
     border: 1px solid rgba(255, 77, 77, 0.2);
+    z-index: 5;
 }
 
 .inspector-legend {
     margin-top: 18px;
     border-top: 1px dashed var(--border);
     padding-top: 10px;
+    display: block;
 }
 
 .char-codes-list {
