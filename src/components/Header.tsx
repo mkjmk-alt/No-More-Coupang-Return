@@ -50,7 +50,7 @@ export function BottomNav() {
                     className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
                     onClick={() => navigate('/')}
                 >
-                    <span className="material-symbols-outlined">grid_view</span>
+                    <span className="material-symbols-outlined">add_box</span>
                     <span>{t.nav.home}</span>
                 </button>
                 <button

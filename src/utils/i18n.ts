@@ -3,10 +3,10 @@ export type Language = 'ko' | 'en';
 export const translations = {
     ko: {
         nav: {
-            home: '홈',
+            home: '생성',
             scan: '스캔',
             records: '내역',
-            dashboard: '대시보드',
+            dashboard: '바코드 생성',
             scanner: '스캐너',
             compare: '분석/비교',
             settings: '비교 분석',
@@ -73,17 +73,17 @@ export const translations = {
     },
     en: {
         nav: {
-            home: 'Home',
+            home: 'Generate',
             scan: 'Scan',
             records: 'Records',
-            dashboard: 'Dashboard',
+            dashboard: 'Generate Barcode',
             scanner: 'Scanner',
             compare: 'Analysis',
             settings: 'Analysis',
             history: 'History'
         },
         generate: {
-            heroTitle: 'Create something new',
+            heroTitle: 'Create Barcode',
             heroSub: 'Enter a value to generate a professional barcode or QR code instantly.',
             placeholder: 'e.g. 123456789',
             btnGenerate: 'Generate Barcode',
