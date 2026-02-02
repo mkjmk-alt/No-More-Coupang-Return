@@ -1,16 +1,18 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from '../utils/LanguageContext';
 import './Header.css';
 
 export function Header() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t, language, setLanguage } = useTranslation();
 
     const getTitle = () => {
         switch (location.pathname) {
-            case '/': return 'Dashboard';
-            case '/scan': return 'Scanner';
-            case '/test': return 'History';
-            case '/compare': return 'Settings';
+            case '/': return t.nav.dashboard;
+            case '/scan': return t.nav.scanner;
+            case '/test': return t.nav.history;
+            case '/compare': return t.nav.settings;
             default: return 'Barcode App';
         }
     };
@@ -22,9 +24,17 @@ export function Header() {
                     <span className="logo-dot"></span>
                     <h1>{getTitle()}</h1>
                 </div>
-                <button className="icon-btn settings-trigger" onClick={() => navigate('/compare')}>
-                    <span className="material-symbols-outlined">settings</span>
-                </button>
+                <div className="header-actions">
+                    <button
+                        className="lang-toggle-btn"
+                        onClick={() => setLanguage(language === 'ko' ? 'en' : 'ko')}
+                    >
+                        {language === 'ko' ? 'EN' : 'KO'}
+                    </button>
+                    <button className="icon-btn settings-trigger" onClick={() => navigate('/compare')}>
+                        <span className="material-symbols-outlined">settings</span>
+                    </button>
+                </div>
             </div>
         </header>
     );
@@ -33,6 +43,7 @@ export function Header() {
 export function BottomNav() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
 
     return (
         <nav className="app-bottom-nav">
@@ -42,21 +53,21 @@ export function BottomNav() {
                     onClick={() => navigate('/')}
                 >
                     <span className="material-symbols-outlined">grid_view</span>
-                    <span>Home</span>
+                    <span>{t.nav.home}</span>
                 </button>
                 <button
                     className={`nav-item ${location.pathname === '/scan' ? 'active' : ''}`}
                     onClick={() => navigate('/scan')}
                 >
                     <span className="material-symbols-outlined">qr_code_scanner</span>
-                    <span>Scan</span>
+                    <span>{t.nav.scan}</span>
                 </button>
                 <button
                     className={`nav-item ${location.pathname === '/test' ? 'active' : ''}`}
                     onClick={() => navigate('/test')}
                 >
                     <span className="material-symbols-outlined">history</span>
-                    <span>Records</span>
+                    <span>{t.nav.records}</span>
                 </button>
             </div>
         </nav>

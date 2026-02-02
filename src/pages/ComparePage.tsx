@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import Tesseract from 'tesseract.js';
 import { generateBarcode } from '../utils/barcodeGenerator';
 import type { BarcodeType } from '../utils/barcodeGenerator';
+import { useTranslation } from '../utils/LanguageContext';
 import './ComparePage.css';
 
 type ProcessingStatus = 'idle' | 'uploading' | 'recognizing' | 'generating' | 'complete' | 'error';
@@ -22,10 +23,10 @@ interface CompareResult {
 }
 
 const BARCODE_TYPES: { value: BarcodeType; label: string }[] = [
-    { value: 'CODE128', label: 'Code128 (자동)' },
+    { value: 'CODE128', label: 'Code128' },
     { value: 'CODE128A', label: 'Code128-A' },
     { value: 'CODE128B', label: 'Code128-B' },
-    { value: 'CODE128C', label: 'Code128-C (숫자)' },
+    { value: 'CODE128C', label: 'Code128-C' },
     { value: 'EAN13', label: 'EAN-13' },
     { value: 'EAN8', label: 'EAN-8' },
     { value: 'CODE39', label: 'Code39' }
@@ -41,6 +42,7 @@ const getImageDimensions = (dataUrl: string): Promise<ImageDimensions> => {
 };
 
 export function ComparePage() {
+    const { t } = useTranslation();
     const [status, setStatus] = useState<ProcessingStatus>('idle');
     const [result, setResult] = useState<CompareResult | null>(null);
     const [error, setError] = useState('');
@@ -108,7 +110,7 @@ export function ComparePage() {
             );
 
             const recognizedText = cleanBarcodeText(ocrResult.data.text);
-            if (!recognizedText) throw new Error('Could not recognize text. Please use a clearer image.');
+            if (!recognizedText) throw new Error(t.scan.errorRecognition);
 
             setManualText(recognizedText);
             const detectedType = detectBarcodeType(recognizedText);
@@ -120,7 +122,7 @@ export function ComparePage() {
                 fontSize: 16, height: 80, margin: 10, lineColor: '#000000'
             });
 
-            if (!generatedBarcode) throw new Error('Failed to generate comparison barcode.');
+            if (!generatedBarcode) throw new Error(t.compare.generating);
 
             const genDimensions = await getImageDimensions(generatedBarcode);
             setGeneratedDimensions(genDimensions);
@@ -188,16 +190,16 @@ export function ComparePage() {
     return (
         <div className="compare-page container animate-fade">
             <div className="page-header mb-3">
-                <h2>Barcode Comparison</h2>
-                <p className="text-secondary">Upload an image to recognize text and compare with a fresh barcode.</p>
+                <h2>{t.compare.title}</h2>
+                <p className="text-secondary">{t.compare.sub}</p>
             </div>
 
             {status === 'idle' && (
                 <section className="section glass-card">
                     <div className="drop-zone" onClick={() => fileInputRef.current?.click()}>
                         <div className="drop-zone-icon">📷</div>
-                        <p className="drop-zone-text">Click to upload original barcode</p>
-                        <p className="drop-zone-hint">Clear images work best for recognition</p>
+                        <p className="drop-zone-text">{t.compare.dropZoneText}</p>
+                        <p className="drop-zone-hint">{t.compare.dropZoneHint}</p>
                     </div>
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileInputChange} style={{ display: 'none' }} />
                 </section>
@@ -207,7 +209,7 @@ export function ComparePage() {
                 <section className="section glass-card">
                     <div className="processing-status">
                         <div className="spinner"></div>
-                        <p className="status-text">{status === 'recognizing' ? `Recognizing... ${progress}%` : 'Generating...'}</p>
+                        <p className="status-text">{status === 'recognizing' ? `${t.compare.analyzing} ${progress}%` : t.compare.generating}</p>
                     </div>
                 </section>
             )}
@@ -215,57 +217,57 @@ export function ComparePage() {
             {status === 'error' && (
                 <section className="section glass-card">
                     <div className="error-msg mb-2">⚠️ {error}</div>
-                    <button className="btn btn-primary" onClick={handleReset}>Try Again</button>
+                    <button className="btn btn-primary" onClick={handleReset}>{t.generate.btnGenerate}</button>
                 </section>
             )}
 
             {status === 'complete' && result && (
                 <>
                     <section className="section glass-card">
-                        <h3 className="section-title">Recognition Result</h3>
+                        <h3 className="section-title">{t.compare.resultTitle}</h3>
                         <div className="recognition-info">
                             <div className="info-item">
-                                <span className="info-label">Recognized Text</span>
+                                <span className="info-label">{t.compare.labelResult}</span>
                                 <input type="text" className="input-field" value={manualText} onChange={(e) => setManualText(e.target.value)} />
                                 <span className={`confidence-badge ${result.confidence > 80 ? 'high' : result.confidence > 50 ? 'medium' : 'low'}`}>
-                                    {result.confidence.toFixed(1)}% Confidence
+                                    {result.confidence.toFixed(1)}% {t.compare.confidence}
                                 </span>
                             </div>
                             <div className="info-item">
-                                <span className="info-label">Barcode Format</span>
+                                <span className="info-label">{t.compare.labelFormat}</span>
                                 <select className="input-field" value={barcodeType} onChange={(e) => setBarcodeType(e.target.value as BarcodeType)}>
                                     {BARCODE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                 </select>
                                 {recommendedType && (
                                     <div className="recommendation-badge">
-                                        ✨ Recommended: <strong>{BARCODE_TYPES.find(t => t.value === recommendedType)?.label}</strong>
+                                        ✨ {t.compare.recommended}: <strong>{BARCODE_TYPES.find(t => t.value === recommendedType)?.label}</strong>
                                     </div>
                                 )}
                             </div>
                             <button className="btn btn-secondary mt-1" onClick={handleManualRegenerate}>
-                                <span className="material-symbols-outlined">refresh</span> Regenerate
+                                <span className="material-symbols-outlined">refresh</span> {t.compare.btnRegenerate}
                             </button>
                         </div>
                     </section>
 
                     <section className="section glass-card comparison-section">
                         <div className="comparison-header">
-                            <h3 className="section-title">Comparison</h3>
+                            <h3 className="section-title">{t.compare.compareTitle}</h3>
                             <div className="compare-mode-toggle">
-                                <button className={`mode-btn ${compareMode === 'side-by-side' ? 'active' : ''}`} onClick={() => setCompareMode('side-by-side')}>Side-by-Side</button>
-                                <button className={`mode-btn ${compareMode === 'overlay' ? 'active' : ''}`} onClick={() => setCompareMode('overlay')}>Overlay</button>
+                                <button className={`mode-btn ${compareMode === 'side-by-side' ? 'active' : ''}`} onClick={() => setCompareMode('side-by-side')}>{t.compare.modeSide}</button>
+                                <button className={`mode-btn ${compareMode === 'overlay' ? 'active' : ''}`} onClick={() => setCompareMode('overlay')}>{t.compare.modeOverlay}</button>
                             </div>
                         </div>
 
                         <div className="size-controls">
                             <div className="size-control-row">
-                                <span className="size-label">Scale: {sizeScale}%</span>
-                                <button className="btn btn-secondary btn-sm" style={{ width: 'auto' }} onClick={handleAutoFit}>Auto Fit</button>
+                                <span className="size-label">{t.compare.scale}: {sizeScale}%</span>
+                                <button className="btn btn-secondary btn-sm" style={{ width: 'auto' }} onClick={handleAutoFit}>{t.compare.autoFit}</button>
                             </div>
                             <input type="range" className="input-field" value={sizeScale} onChange={(e) => setSizeScale(Number(e.target.value))} min={50} max={200} />
 
                             <div className="position-controls mt-2">
-                                <span className="size-label">Micro-adjust (X:{offsetX}, Y:{offsetY})</span>
+                                <span className="size-label">{t.compare.microAdjust} (X:{offsetX}, Y:{offsetY})</span>
                                 <div className="pos-btn-grid">
                                     <div className="pos-row">
                                         <button className="pos-btn" onClick={() => setOffsetY(v => v - 1)}>↑</button>
@@ -285,11 +287,11 @@ export function ComparePage() {
                         {compareMode === 'side-by-side' ? (
                             <div className="comparison-container">
                                 <div className="comparison-item">
-                                    <h4><span className="material-symbols-outlined">image</span> Original</h4>
+                                    <h4><span className="material-symbols-outlined">image</span> {t.compare.original}</h4>
                                     <div className="image-wrapper"><img src={result.originalImage} alt="Original" /></div>
                                 </div>
                                 <div className="comparison-item">
-                                    <h4><span className="material-symbols-outlined">barcode</span> Generated</h4>
+                                    <h4><span className="material-symbols-outlined">barcode</span> {t.compare.generated}</h4>
                                     <div className="image-wrapper"><img src={result.generatedBarcode} alt="Generated" style={getScaledStyle()} /></div>
                                     <p className="barcode-text">{result.recognizedText}</p>
                                 </div>
@@ -303,7 +305,7 @@ export function ComparePage() {
                                     </div>
                                 </div>
                                 <div className="mt-2 w-full" style={{ width: '100%' }}>
-                                    <p className="text-center text-muted mb-1">Overlay Opacity: {overlayOpacity}%</p>
+                                    <p className="text-center text-muted mb-1">{t.compare.opacity}: {overlayOpacity}%</p>
                                     <input type="range" className="input-field" value={overlayOpacity} onChange={(e) => setOverlayOpacity(Number(e.target.value))} min={0} max={100} />
                                 </div>
                                 <p className="barcode-text">{result.recognizedText}</p>
@@ -311,7 +313,7 @@ export function ComparePage() {
                         )}
                     </section>
 
-                    <button className="btn btn-primary mt-2" onClick={handleReset}>Upload New Image</button>
+                    <button className="btn btn-primary mt-2" onClick={handleReset}>{t.compare.uploadNew}</button>
                 </>
             )}
         </div>

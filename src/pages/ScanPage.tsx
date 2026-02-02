@@ -2,9 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { createScanner, scanImageFile } from '../utils/barcodeScanner';
 import { addScanToHistory } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '../utils/LanguageContext';
 import './ScanPage.css';
 
 export function ScanPage() {
+    const { t } = useTranslation();
     const [isScanning, setIsScanning] = useState(false);
     const [error, setError] = useState('');
     const scannerRef = useRef<any>(null);
@@ -22,7 +24,7 @@ export function ScanPage() {
                     await scannerRef.current.start(
                         (result: any) => {
                             addScanToHistory(result.text, result.format);
-                            navigate('/test'); // Redirect to history/results
+                            navigate('/test');
                         },
                         (err: string) => {
                             setError(err);
@@ -31,7 +33,7 @@ export function ScanPage() {
                     );
                 }
             } catch (e) {
-                setError('PERMISSION DENIED');
+                setError(t.scan.errorPermission);
                 setIsScanning(false);
             }
         }, 100);
@@ -46,7 +48,7 @@ export function ScanPage() {
             addScanToHistory(response.result.text, response.result.format);
             navigate('/test');
         } else {
-            setError('COULD NOT RECOGNIZE BARCODE');
+            setError(t.scan.errorRecognition);
         }
     };
 
@@ -69,19 +71,19 @@ export function ScanPage() {
                 </div>
 
                 <div className="scan-tip">
-                    <p>Align barcode within the frame</p>
+                    <p>{t.scan.tip}</p>
                 </div>
             </div>
 
             <div id="scanner-container" className="scanner-viewport">
-                {!isScanning && !error && <div className="scanner-status">Initializing...</div>}
+                {!isScanning && !error && <div className="scanner-status">{t.scan.initializing}</div>}
                 {error && <div className="scanner-status error">{error}</div>}
             </div>
 
             <div className="scan-footer container">
                 <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
                     <span className="material-symbols-outlined">image</span>
-                    Upload Image
+                    {t.scan.btnUpload}
                 </button>
                 <input
                     type="file"

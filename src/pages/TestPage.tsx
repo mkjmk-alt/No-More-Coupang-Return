@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { getScanHistory, clearScanHistory } from '../utils/helpers';
 import type { ScanHistoryItem } from '../utils/helpers';
+import { useTranslation } from '../utils/LanguageContext';
 import './TestPage.css';
 
 export function TestPage() {
+    const { t } = useTranslation();
     const [history, setHistory] = useState<ScanHistoryItem[]>([]);
 
     useEffect(() => {
@@ -11,7 +13,7 @@ export function TestPage() {
     }, []);
 
     const handleClear = () => {
-        if (window.confirm('Delete all scan records?')) {
+        if (window.confirm(t.history.clearConfirm)) {
             clearScanHistory();
             setHistory([]);
         }
@@ -19,7 +21,7 @@ export function TestPage() {
 
     const copyToClipboard = async (text: string) => {
         await navigator.clipboard.writeText(text);
-        alert('Copied to clipboard');
+        alert(t.generate.copied);
     };
 
     const formatDate = (timestamp: number) => {
@@ -35,9 +37,9 @@ export function TestPage() {
     return (
         <div className="test-page container animate-fade">
             <div className="history-page-header">
-                <h2>Activity History</h2>
+                <h2>{t.history.title}</h2>
                 {history.length > 0 && (
-                    <button className="clear-link" onClick={handleClear}>Clear all</button>
+                    <button className="clear-link" onClick={handleClear}>{t.history.clearAll}</button>
                 )}
             </div>
 
@@ -66,10 +68,10 @@ export function TestPage() {
                 {history.length === 0 && (
                     <div className="empty-state">
                         <span className="material-symbols-outlined emoji">history</span>
-                        <h3>No activity found</h3>
-                        <p className="text-muted">Scanned and generated items will appear here.</p>
+                        <h3>{t.history.noRecords}</h3>
+                        <p className="text-muted">{t.history.getStarted}</p>
                         <button className="btn btn-primary mt-3" onClick={() => window.location.href = '/'}>
-                            Get Started
+                            {t.history.getStarted}
                         </button>
                     </div>
                 )}

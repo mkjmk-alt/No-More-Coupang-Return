@@ -5,11 +5,9 @@ import {
     downloadImage,
 } from '../utils/barcodeGenerator';
 import type { BarcodeType } from '../utils/barcodeGenerator';
-import {
-    getScanHistory,
-    addScanToHistory,
-} from '../utils/helpers';
+import { getScanHistory, addScanToHistory } from '../utils/helpers';
 import type { ScanHistoryItem } from '../utils/helpers';
+import { useTranslation } from '../utils/LanguageContext';
 import './GeneratePage.css';
 
 const BARCODE_TYPES: { value: BarcodeType; label: string }[] = [
@@ -20,6 +18,7 @@ const BARCODE_TYPES: { value: BarcodeType; label: string }[] = [
 ];
 
 export function GeneratePage() {
+    const { t } = useTranslation();
     const [inputText, setInputText] = useState('');
     const [barcodeType, setBarcodeType] = useState<BarcodeType>('CODE128');
     const [barcodeImage, setBarcodeImage] = useState<string | null>(null);
@@ -32,7 +31,7 @@ export function GeneratePage() {
 
     const handleGenerate = async () => {
         if (!inputText.trim()) {
-            setError('Please enter some text');
+            setError(t.generate.errorEmpty);
             return;
         }
 
@@ -51,10 +50,10 @@ export function GeneratePage() {
                 addScanToHistory(inputText, barcodeType);
                 setHistory(getScanHistory());
             } else {
-                setError('Failed to generate. Check your input.');
+                setError(t.generate.errorFailed);
             }
         } catch (e) {
-            setError('Invalid characters for this format');
+            setError(t.generate.errorInvalid);
         }
     };
 
@@ -66,14 +65,14 @@ export function GeneratePage() {
 
     const copyToClipboard = async () => {
         await navigator.clipboard.writeText(inputText);
-        alert('Copied to clipboard');
+        alert(t.generate.copied);
     }
 
     return (
         <div className="generate-page container animate-fade">
             <section className="hero-section">
-                <h2>Create something new</h2>
-                <p className="text-muted">Enter a value to generate a professional barcode or QR code instantly.</p>
+                <h2>{t.generate.heroTitle}</h2>
+                <p className="text-muted">{t.generate.heroSub}</p>
             </section>
 
             <div className="main-creation-card mt-3">
@@ -83,7 +82,7 @@ export function GeneratePage() {
                         className="input-field"
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
-                        placeholder="e.g. 123456789"
+                        placeholder={t.generate.placeholder}
                         onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
                     />
                 </div>
@@ -102,7 +101,7 @@ export function GeneratePage() {
 
                 <button className="btn btn-primary mt-3" onClick={handleGenerate}>
                     <span className="material-symbols-outlined">add</span>
-                    Generate Barcode
+                    {t.generate.btnGenerate}
                 </button>
                 {error && <p className="error-msg mt-1">{error}</p>}
             </div>
@@ -119,11 +118,11 @@ export function GeneratePage() {
                     <div className="preview-actions">
                         <button className="btn btn-secondary" onClick={copyToClipboard}>
                             <span className="material-symbols-outlined">content_copy</span>
-                            Copy
+                            {t.generate.btnCopy}
                         </button>
                         <button className="btn btn-primary" onClick={handleDownload}>
                             <span className="material-symbols-outlined">download</span>
-                            Save
+                            {t.generate.btnSave}
                         </button>
                     </div>
                 </div>
@@ -131,8 +130,8 @@ export function GeneratePage() {
 
             <section className="quick-history-section mt-3">
                 <div className="section-header">
-                    <h3>Recent Creations</h3>
-                    <button className="text-btn" onClick={() => window.location.href = '/test'}>View All</button>
+                    <h3>{t.generate.recentTitle}</h3>
+                    <button className="text-btn" onClick={() => window.location.href = '/test'}>{t.generate.viewAll}</button>
                 </div>
 
                 <div className="minimal-history-list mt-2">
@@ -151,7 +150,7 @@ export function GeneratePage() {
                         </div>
                     ))}
                     {history.length === 0 && (
-                        <p className="empty-text text-center mt-3 text-muted">No history yet.</p>
+                        <p className="empty-text text-center mt-3 text-muted">{t.generate.noHistory}</p>
                     )}
                 </div>
             </section>
