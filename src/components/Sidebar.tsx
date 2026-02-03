@@ -47,7 +47,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     ))}
                 </nav>
                 <div className="sidebar-footer">
-                    <p>© 2024 Barcode Lens</p>
+                    <div className="footer-brand">
+                        <span className="footer-dot"></span>
+                        <span>BARCODE LENS</span>
+                    </div>
                 </div>
             </aside>
         </>
