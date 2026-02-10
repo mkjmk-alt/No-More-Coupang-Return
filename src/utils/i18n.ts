@@ -11,9 +11,11 @@ export const translations = {
             compare: '분석/비교',
             settings: '비교 분석',
             history: '활동 내역',
+            ai: '스마트 어시스턴트',
             categories: {
                 barcode: '바코드',
-                expiration: '유통기한'
+                expiration: '유통기한',
+                ai: '스마트 기능'
             }
         },
         generate: {
@@ -73,6 +75,16 @@ export const translations = {
             generated: '생성된 바코드',
             opacity: '겹치기 투명도',
             uploadNew: '새 이미지 업로드'
+        },
+        ai: {
+            title: 'Gemini AI 어시스턴트',
+            sub: '공식 정책 및 바코드 지식을 기반으로 똑똑하게 답변해 드립니다.',
+            inputPlaceholder: '무엇이든 물어보세요...',
+            btnSend: '질문하기',
+            noContext: '반품 규정 등에 궁금한 점을 물어보세요.',
+            connectionError: 'Gemini API 호출에 실패했습니다. API 키를 확인하세요.',
+            thinking: 'AI가 분석 중입니다...',
+            apiKeyRequired: '설정에서 Gemini API 키를 먼저 등록해 주세요.'
         }
     },
     en: {
@@ -85,9 +97,11 @@ export const translations = {
             compare: 'Analysis',
             settings: 'Analysis',
             history: 'History',
+            ai: 'Smart Assistant',
             categories: {
                 barcode: 'Barcode',
-                expiration: 'Expiration Date'
+                expiration: 'Expiration Date',
+                ai: 'Smart Features'
             }
         },
         generate: {
@@ -147,6 +161,16 @@ export const translations = {
             generated: 'Generated',
             opacity: 'Overlay Opacity',
             uploadNew: 'Upload New Image'
+        },
+        ai: {
+            title: 'Gemini AI Assistant',
+            sub: 'Smart answers grounded in official policies and barcode data.',
+            inputPlaceholder: 'Ask anything...',
+            btnSend: 'Send',
+            noContext: 'Ask about return policies or barcode info.',
+            connectionError: 'Gemini API call failed. Check your API key.',
+            thinking: 'AI is analyzing...',
+            apiKeyRequired: 'Please register your Gemini API key in settings first.'
         }
     }
 };

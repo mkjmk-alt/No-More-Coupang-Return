@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@types/jsbarcode": "^3.11.4",
     "@types/qrcode": "^1.5.6",
     "@zxing/browser": "^0.1.5",

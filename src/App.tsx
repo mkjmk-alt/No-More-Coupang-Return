@@ -4,6 +4,7 @@ import { ScanPage } from './pages/ScanPage';
 import { GeneratePage } from './pages/GeneratePage';
 import { TestPage } from './pages/TestPage';
 import { ComparePage } from './pages/ComparePage';
+import { AiAssistantPage } from './pages/AiAssistantPage';
 import { LanguageProvider } from './utils/LanguageContext';
 import './App.css';
 
@@ -19,6 +20,7 @@ function App() {
               <Route path="/scan" element={<ScanPage />} />
               <Route path="/test" element={<TestPage />} />
               <Route path="/compare" element={<ComparePage />} />
+              <Route path="/ai" element={<AiAssistantPage />} />
             </Routes>
           </main>
           <BottomNav />

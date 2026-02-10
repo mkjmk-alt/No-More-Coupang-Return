@@ -35,6 +35,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 // Future items for Expiration Date
                 { path: '#', label: '유통기한 관리 (준비 중)', icon: 'calendar_today', disabled: true },
             ]
+        },
+        {
+            title: t.nav.categories.ai,
+            items: [
+                { path: '/ai', label: t.nav.ai, icon: 'smart_toy' },
+            ]
         }
     ];
 
