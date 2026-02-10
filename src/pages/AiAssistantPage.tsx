@@ -69,11 +69,11 @@ export function AiAssistantPage() {
         <div className="ai-page container animate-fade">
             <div className="page-header mb-3 d-flex align-items-center justify-content-between">
                 <div>
-                    <h2>{t.ai.title}</h2>
-                    <p className="text-secondary">{t.ai.sub}</p>
+                    <h2>{t.ai.title} (KB v2.0)</h2>
+                    <p className="text-secondary">보안된 내부 지식 베이스를 기반으로 답변합니다.</p>
                 </div>
                 <button className="btn btn-icon btn-ghost" onClick={() => setShowKeyInput(!showKeyInput)}>
-                    <span className="material-symbols-outlined">settings</span>
+                    <span className="material-symbols-outlined">key</span>
                 </button>
             </div>
 
@@ -102,8 +102,8 @@ export function AiAssistantPage() {
                 <div className="chat-history">
                     {messages.length === 0 ? (
                         <div className="chat-empty">
-                            <span className="material-symbols-outlined large-icon">temp_preferences_custom</span>
-                            <p>{t.ai.noContext}</p>
+                            <span className="material-symbols-outlined large-icon">encrypted</span>
+                            <p>내부 보안 문서가 로드되었습니다.<br />질문을 입력하면 지식 베이스를 검색합니다.</p>
                         </div>
                     ) : (
                         messages.map((msg, idx) => (

@@ -15,14 +15,19 @@ export async function chatWithGemini(userMessage: string) {
     const model = genAI.getGenerativeModel({ model: "gemini-3.0-flash-preview" });
 
     // Combine grounding documents into context
-    const context = GROUNDING_DOCUMENTS.map(doc => `--- ${doc.title} ---\n${doc.content}`).join("\n\n");
+    const context = GROUNDING_DOCUMENTS.map(doc => `[파일 이름: ${doc.title}]\n${doc.content}`).join("\n\n");
 
     const prompt = `
-당신은 'No-More-Coupang-Return' 앱의 바코드 분석 전문가입니다.
-아래 제공된 [Grounding Data]를 기반으로 사용자의 질문에 답변하세요.
-데이터에 없는 내용이라면 일반적인 지식을 바탕으로 답변하되, 가급적 앱의 목적(바코드 복원 및 반품 안내)에 맞게 답변하세요.
+당신은 'No-More-Coupang-Return'의 **비공개 지식 베이스(Internal Knowledge Base) 관리자**입니다.
+아래 제공된 **비공개 내부 문서**들을 기반으로 사용자의 질문에 정확하고 전문적인 답변을 제공하세요.
 
-[Grounding Data]
+**작동 지침:**
+1. 모든 답변의 시작 부분에 [내부 지식 검색 결과] 라고 머리말을 붙이세요.
+2. 반드시 제공된 [비공개 내부 문서 리스트]의 내용만을 근거로 답변하세요.
+3. 문서에 답변할 내용이 없다면 "죄송합니다. 요청하신 정보는 현재 비공개 내부 문서에 포함되어 있지 않습니다."라고 답변하세요.
+4. 답변의 마지막 줄에는 반드시 정보를 가져온 [파일 이름]을 명시하세요. 예: (출처: 쿠팡 반품 정책)
+
+[비공개 내부 문서 리스트]
 ${context}
 
 사용자 질문: ${userMessage}
