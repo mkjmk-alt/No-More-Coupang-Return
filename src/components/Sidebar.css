@@ -70,12 +70,33 @@
 
 .sidebar-content {
     flex: 1;
-    /* 이 부분이 하단 푸터를 바닥으로 밀어냅니다 */
     padding: 20px 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 24px;
+    /* Increase gap between groups */
     overflow-y: auto;
+}
+
+.sidebar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-category-header {
+    padding: 0 12px 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #888888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .sidebar-menu-item {
@@ -98,9 +119,20 @@
     text-decoration: none;
 }
 
-.sidebar-menu-item:hover {
+.sidebar-menu-item:hover:not(.disabled) {
     background: #f0f0f0;
     padding-left: 24px;
+}
+
+.sidebar-menu-item.disabled {
+    opacity: 0.5;
+    cursor: default;
+    background: transparent;
+}
+
+.sidebar-menu-item.disabled:hover {
+    padding-left: 20px;
+    /* No movement for disabled */
 }
 
 .sidebar-menu-item .material-symbols-outlined {

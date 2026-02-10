@@ -87,6 +87,31 @@ export function isNativeBarcodeDetectorSupported(): boolean {
     return 'BarcodeDetector' in window;
 }
 
+// Helper to convert numeric or raw format names to readable strings
+export function getFormatName(format: any): string {
+    if (!format) return 'Unknown';
+    const formatStr = format.toString().toUpperCase();
+
+    // Map common numeric IDs to names if they appear as numbers
+    const numericMap: Record<string, string> = {
+        '0': 'QR_CODE',
+        '4': 'CODE_128',
+        '3': 'CODE_39',
+        '8': 'EAN_13',
+        '7': 'EAN_8',
+        '10': 'UPC_A',
+        '11': 'UPC_E',
+        '1': 'DATA_MATRIX',
+        '9': 'ITF',
+        '2': 'CODABAR'
+    };
+
+    if (numericMap[formatStr]) return numericMap[formatStr];
+
+    // Clean up strings (e.g., remove 'FORMAT_' prefix if present in some libs)
+    return formatStr.replace(/^(FORMAT_|AZTEC_|ISO_)/, '');
+}
+
 export async function scanFromImage(file: File): Promise<ScanResult | null> {
     const html5QrCode = new Html5Qrcode('temp-scanner', { verbose: false });
 
@@ -162,7 +187,7 @@ export class NativeBarcodeScanner {
 
                         onScan({
                             text: barcode.rawValue,
-                            format: barcode.format.toUpperCase(),
+                            format: getFormatName(barcode.format),
                             screenshot
                         });
                         return; // Stop after successful scan
@@ -415,7 +440,7 @@ export class BarcodeScanner {
 
                 onScan({
                     text: decodedText,
-                    format: decodedResult.result.format?.formatName || 'Unknown',
+                    format: getFormatName(decodedResult.result.format?.formatName),
                     screenshot
                 });
             };
@@ -520,41 +545,48 @@ export async function scanImageFile(file: File): Promise<ImageScanResponse> {
     // Process image with contrast enhancement
     const { blob: processedBlob, dataUrl: resizedImageUrl } = await resizeImageForScanning(file);
 
-    // Multi-scale factors to try (from smaller to larger for speed)
-    const scales = [1.0, 0.75, 1.25, 0.5, 1.5];
+    // Multi-scale factors and rotations to try
+    const rotations = [0, 90, 270, 180]; // Try common orientations
+    const scales = [1.0, 0.75, 1.25];
 
-    // Try ZXing first with multiple scales
+    // Try ZXing first with multiple rotations and scales
     const zxingReader = createZXingReader();
 
-    for (const scale of scales) {
-        try {
-            const scaledBlob = scale === 1.0
-                ? processedBlob
-                : await rescaleBlob(processedBlob, scale);
-
-            const imageUrl = URL.createObjectURL(scaledBlob);
-
+    for (const rotation of rotations) {
+        for (const scale of scales) {
             try {
-                const result = await zxingReader.decodeFromImageUrl(imageUrl);
-                URL.revokeObjectURL(imageUrl);
+                // If it's the first attempt (0 rotation, 1.0 scale), use processedBlob directly
+                const scaledBlob = (rotation === 0 && scale === 1.0)
+                    ? processedBlob
+                    : await transformBlob(processedBlob, scale, rotation);
 
-                if (result) {
-                    console.log(`ZXing scan success at scale ${scale}`);
-                    return {
-                        success: true,
-                        result: {
-                            text: result.getText(),
-                            format: result.getBarcodeFormat().toString(),
+                const imageUrl = URL.createObjectURL(scaledBlob);
+
+                try {
+                    const result = await zxingReader.decodeFromImageUrl(imageUrl);
+                    URL.revokeObjectURL(imageUrl);
+
+                    if (result) {
+                        const formatCode = result.getBarcodeFormat();
+                        const formatName = getFormatName(formatCode);
+
+                        console.log(`ZXing scan success at rotation ${rotation}, scale ${scale}: ${formatName}`);
+                        return {
+                            success: true,
+                            result: {
+                                text: result.getText(),
+                                format: formatName,
+                                resizedImageUrl
+                            },
                             resizedImageUrl
-                        },
-                        resizedImageUrl
-                    };
+                        };
+                    }
+                } catch {
+                    URL.revokeObjectURL(imageUrl);
                 }
-            } catch {
-                URL.revokeObjectURL(imageUrl);
+            } catch (error) {
+                console.log(`ZXing scan failed at rotation ${rotation}, scale ${scale}:`, error);
             }
-        } catch (error) {
-            console.log(`ZXing scan failed at scale ${scale}:`, error);
         }
     }
 
@@ -571,7 +603,7 @@ export async function scanImageFile(file: File): Promise<ImageScanResponse> {
                     success: true,
                     result: {
                         text: barcodes[0].rawValue,
-                        format: barcodes[0].format.toUpperCase(),
+                        format: getFormatName(barcodes[0].format),
                         resizedImageUrl
                     },
                     resizedImageUrl
@@ -619,14 +651,25 @@ export async function scanImageFile(file: File): Promise<ImageScanResponse> {
     }
 }
 
-// Rescale blob to a different size
-async function rescaleBlob(blob: Blob, scale: number): Promise<Blob> {
+// Transform (resize and rotate) blob
+async function transformBlob(blob: Blob, scale: number, rotation: number = 0): Promise<Blob> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = Math.round(img.width * scale);
-            canvas.height = Math.round(img.height * scale);
+            const radian = (rotation * Math.PI) / 180;
+
+            // Calculate new dimensions after rotation
+            const width = img.width * scale;
+            const height = img.height * scale;
+
+            if (rotation === 90 || rotation === 270) {
+                canvas.width = height;
+                canvas.height = width;
+            } else {
+                canvas.width = width;
+                canvas.height = height;
+            }
 
             const ctx = canvas.getContext('2d');
             if (!ctx) {
@@ -636,7 +679,11 @@ async function rescaleBlob(blob: Blob, scale: number): Promise<Blob> {
 
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Rotate and draw
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(radian);
+            ctx.drawImage(img, -width / 2, -height / 2, width, height);
 
             canvas.toBlob(
                 (newBlob) => {

@@ -10,7 +10,13 @@ export const translations = {
             scanner: '스캐너',
             compare: '분석/비교',
             settings: '비교 분석',
-            history: '활동 내역'
+            history: '활동 내역',
+            ai: 'AI 어시스턴트',
+            categories: {
+                barcode: '바코드',
+                expiration: '유통기한',
+                ai: '스마트 기능'
+            }
         },
         generate: {
             heroTitle: '새로운 바코드 생성',
@@ -69,6 +75,15 @@ export const translations = {
             generated: '생성된 바코드',
             opacity: '겹치기 투명도',
             uploadNew: '새 이미지 업로드'
+        },
+        ai: {
+            title: 'AI 분석 어시스턴트',
+            sub: 'NotebookLM의 지식을 바탕으로 바코드 정보나 제품에 대해 물어보세요.',
+            inputPlaceholder: '무엇이든 물어보세요...',
+            btnSend: '질문하기',
+            noContext: '먼저 바코드를 스캔하거나 업로드하여 데이터를 준비하세요.',
+            connectionError: 'AI 서비스에 연결할 수 없습니다. MCP 서버가 실행 중인지 확인하세요.',
+            thinking: 'AI가 생각 중입니다...'
         }
     },
     en: {
@@ -80,7 +95,13 @@ export const translations = {
             scanner: 'Scanner',
             compare: 'Analysis',
             settings: 'Analysis',
-            history: 'History'
+            history: 'History',
+            ai: 'AI Assistant',
+            categories: {
+                barcode: 'Barcode',
+                expiration: 'Expiration Date',
+                ai: 'Smart Features'
+            }
         },
         generate: {
             heroTitle: 'Create Barcode',
@@ -139,6 +160,15 @@ export const translations = {
             generated: 'Generated',
             opacity: 'Overlay Opacity',
             uploadNew: 'Upload New Image'
+        },
+        ai: {
+            title: 'AI Assistant',
+            sub: 'Ask about barcode info or products based on NotebookLM knowledge.',
+            inputPlaceholder: 'Ask anything...',
+            btnSend: 'Send',
+            noContext: 'Scan or upload a barcode first to provide context.',
+            connectionError: 'Could not connect to AI service. Check if MCP server is running.',
+            thinking: 'AI is thinking...'
         }
     }
 };
