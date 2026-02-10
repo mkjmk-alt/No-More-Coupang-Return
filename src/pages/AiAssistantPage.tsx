@@ -63,7 +63,7 @@ export function AiAssistantPage() {
                 <p className="text-secondary">보안된 내부 지식 베이스를 기반으로 답변합니다.</p>
             </div>
 
-            <div className="category-selection d-flex gap-2 mb-3">
+            <div className="category-selection">
                 <button
                     className={`btn btn-sm ${selectedCategory === 'all' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => setSelectedCategory('all')}
