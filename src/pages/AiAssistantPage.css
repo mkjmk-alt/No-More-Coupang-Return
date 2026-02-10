@@ -149,3 +149,23 @@
 .btn-ghost:hover {
     background: rgba(0, 0, 0, 0.05);
 }
+
+.category-selection {
+    display: flex;
+    overflow-x: auto;
+    padding: 4px;
+    gap: 8px;
+    scrollbar-width: none;
+}
+
+.category-selection::-webkit-scrollbar {
+    display: none;
+}
+
+.category-selection .btn {
+    white-space: nowrap;
+    border-radius: 20px !important;
+    padding: 6px 16px !important;
+    font-size: 13px !important;
+    font-weight: 500;
+}

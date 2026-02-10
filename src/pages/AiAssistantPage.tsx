@@ -16,8 +16,9 @@ export function AiAssistantPage() {
     const [input, setInput] = useState('');
     const [isThinking, setIsThinking] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<'로켓배송' | 'Rocket_Growth' | 'all'>('all');
 
-    const handleSend = useCallback(async (query: string) => {
+    const handleSend = useCallback(async (query: string, category: '로켓배송' | 'Rocket_Growth' | 'all' = 'all') => {
         if (!query.trim() || isThinking) return;
 
         const userMessage: Message = { role: 'user', content: query };
@@ -26,7 +27,7 @@ export function AiAssistantPage() {
         setError(null);
 
         try {
-            const aiResponse = await chatWithGemini(query);
+            const aiResponse = await chatWithGemini(query, category);
             setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
         } catch (err: any) {
             console.error('Gemini call failed:', err);
@@ -44,24 +45,43 @@ export function AiAssistantPage() {
     useEffect(() => {
         const state = location.state as { autoQuery?: string };
         if (state?.autoQuery) {
-            handleSend(state.autoQuery);
+            handleSend(state.autoQuery, selectedCategory);
             window.history.replaceState({}, document.title);
         }
-    }, [location.state, handleSend]);
+    }, [location.state, handleSend, selectedCategory]);
 
     const onManualSend = () => {
         if (!input.trim()) return;
-        handleSend(input);
+        handleSend(input, selectedCategory);
         setInput('');
     };
 
     return (
         <div className="ai-page container animate-fade">
-            <div className="page-header mb-3 d-flex align-items-center justify-content-between">
-                <div>
-                    <h2>{t.ai.title} (KB v2.0)</h2>
-                    <p className="text-secondary">보안된 내부 지식 베이스를 기반으로 답변합니다.</p>
-                </div>
+            <div className="page-header mb-3">
+                <h2>{t.ai.title} (KB v2.0)</h2>
+                <p className="text-secondary">보안된 내부 지식 베이스를 기반으로 답변합니다.</p>
+            </div>
+
+            <div className="category-selection d-flex gap-2 mb-3">
+                <button
+                    className={`btn btn-sm ${selectedCategory === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setSelectedCategory('all')}
+                >
+                    전체
+                </button>
+                <button
+                    className={`btn btn-sm ${selectedCategory === '로켓배송' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setSelectedCategory('로켓배송')}
+                >
+                    로켓배송
+                </button>
+                <button
+                    className={`btn btn-sm ${selectedCategory === 'Rocket_Growth' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setSelectedCategory('Rocket_Growth')}
+                >
+                    Rocket_Growth
+                </button>
             </div>
 
             <div className="ai-chat-container glass-card">
