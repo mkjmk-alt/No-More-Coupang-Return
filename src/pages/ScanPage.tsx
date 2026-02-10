@@ -7,6 +7,9 @@ import './ScanPage.css';
 
 export function ScanPage() {
     const { t } = useTranslation();
+    const [torchEnabled, setTorchEnabled] = useState(false);
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [hasTorch, setHasTorch] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [error, setError] = useState('');
     const scannerRef = useRef<any>(null);
@@ -31,12 +34,33 @@ export function ScanPage() {
                             setIsScanning(false);
                         }
                     );
+
+                    // Check for torch support
+                    if (scannerRef.current.isTorchSupported) {
+                        const supported = await scannerRef.current.isTorchSupported();
+                        setHasTorch(supported);
+                    }
                 }
             } catch (e) {
                 setError(t.scan.errorPermission);
                 setIsScanning(false);
             }
         }, 100);
+    };
+
+    const toggleTorch = async () => {
+        if (scannerRef.current && scannerRef.current.toggleTorch) {
+            const newState = await scannerRef.current.toggleTorch();
+            setTorchEnabled(newState);
+        }
+    };
+
+    const handleZoom = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseFloat(e.target.value);
+        setZoomLevel(value);
+        if (scannerRef.current && scannerRef.current.applyZoom) {
+            await scannerRef.current.applyZoom(value);
+        }
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,16 +86,52 @@ export function ScanPage() {
     return (
         <div className="scan-page animate-fade">
             <div className="scan-overlay">
-                <div className="scan-frame">
-                    <div className="scan-corner top-left"></div>
-                    <div className="scan-corner top-right"></div>
-                    <div className="scan-corner bottom-left"></div>
-                    <div className="scan-corner bottom-right"></div>
-                    <div className="scan-line"></div>
+                <div className="scan-header container">
+                    <button className="btn-icon-circular" onClick={() => navigate(-1)}>
+                        <span className="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <div className="header-actions">
+                        {hasTorch && (
+                            <button
+                                className={`btn-icon-circular ${torchEnabled ? 'active' : ''}`}
+                                onClick={toggleTorch}
+                            >
+                                <span className="material-symbols-outlined">
+                                    {torchEnabled ? 'flashlight_on' : 'flashlight_off'}
+                                </span>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                <div className="scan-tip">
-                    <p>{t.scan.tip}</p>
+                <div className="scan-frame-container">
+                    <div className="scan-frame">
+                        <div className="scan-corner top-left"></div>
+                        <div className="scan-corner top-right"></div>
+                        <div className="scan-corner bottom-left"></div>
+                        <div className="scan-corner bottom-right"></div>
+                        <div className="scan-line"></div>
+                    </div>
+                </div>
+
+                <div className="scan-controls container">
+                    <div className="zoom-slider-container">
+                        <span className="material-symbols-outlined">zoom_out</span>
+                        <input
+                            type="range"
+                            min="1"
+                            max="5"
+                            step="0.1"
+                            value={zoomLevel}
+                            onChange={handleZoom}
+                            className="zoom-slider"
+                        />
+                        <span className="material-symbols-outlined">zoom_in</span>
+                    </div>
+
+                    <div className="scan-tip">
+                        <p>{t.scan.tip}</p>
+                    </div>
                 </div>
             </div>
 
@@ -81,7 +141,7 @@ export function ScanPage() {
             </div>
 
             <div className="scan-footer container">
-                <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
+                <button className="btn btn-secondary upload-btn" onClick={() => fileInputRef.current?.click()}>
                     <span className="material-symbols-outlined">image</span>
                     {t.scan.btnUpload}
                 </button>

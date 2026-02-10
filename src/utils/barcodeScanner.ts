@@ -263,6 +263,24 @@ export class NativeBarcodeScanner {
         this.torchEnabled = false;
     }
 
+    async applyZoom(zoom: number): Promise<void> {
+        if (!this.stream) return;
+        const track = this.stream.getVideoTracks()[0];
+        if (!track) return;
+
+        try {
+            const capabilities = track.getCapabilities() as any;
+            if (capabilities.zoom) {
+                const zoomVal = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, zoom));
+                await track.applyConstraints({
+                    advanced: [{ zoom: zoomVal } as any]
+                });
+            }
+        } catch (err) {
+            console.error('Zoom applying failed:', err);
+        }
+    }
+
     getIsScanning(): boolean {
         return this.isScanning;
     }
@@ -495,6 +513,25 @@ export class BarcodeScanner {
             this.isScanning = false;
         } catch (error) {
             console.error('Scanner stop error:', error);
+        }
+    }
+
+    async applyZoom(zoom: number): Promise<void> {
+        if (!this.html5QrCode || !this.isScanning) return;
+        try {
+            // @ts-ignore - access internal track
+            const track = (this.html5QrCode as any).getRunningTrack();
+            if (track) {
+                const capabilities = track.getCapabilities() as any;
+                if (capabilities.zoom) {
+                    const zoomVal = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, zoom));
+                    await track.applyConstraints({
+                        advanced: [{ zoom: zoomVal } as any]
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Html5Qrcode zoom failed:', err);
         }
     }
 

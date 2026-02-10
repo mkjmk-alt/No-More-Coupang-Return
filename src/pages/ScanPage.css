@@ -1,11 +1,13 @@
 .scan-page {
     position: fixed;
-    top: 72px;
+    top: 0;
+    /* Changed to 0 as it's a full-screen mode usually */
     left: 0;
     right: 0;
-    bottom: 80px;
+    bottom: 0;
     background: #000;
     overflow: hidden;
+    z-index: 1000;
 }
 
 .scanner-viewport {
@@ -19,10 +21,6 @@
     object-fit: cover;
 }
 
-/* 
-   가림막 효과 (Cutout Overlay)
-   박스 그림자를 아주 크게 주어 중앙 프레임을 제외한 배경을 어둡게 만듭니다.
-*/
 .scan-overlay {
     position: absolute;
     top: 0;
@@ -32,25 +30,54 @@
     z-index: 10;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
     pointer-events: none;
-    background: rgba(0, 0, 0, 0.4);
-    /* 기본 어두운 배경 */
+    background: transparent;
 }
 
-/* 스캔 구역 프레임 */
+.scan-header {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 20px;
+    pointer-events: auto;
+}
+
+.btn-icon-circular {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s;
+    pointer-events: auto;
+}
+
+.btn-icon-circular.active {
+    background: #fff;
+    color: #000;
+}
+
+.scan-frame-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .scan-frame {
     width: 280px;
     height: 280px;
     position: relative;
     border-radius: 24px;
-    /* 
-       박스 그림자를 이용해 프레임 밖을 더 어둡게 처리 
-       그림자 크기를 100vh로 주어 화면 전체를 덮음
-    */
     box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .scan-corner {
@@ -89,16 +116,15 @@
     border-top: 0;
 }
 
-/* 스캔 레이저 라인 */
 .scan-line {
     position: absolute;
     top: 10%;
     left: 10%;
     right: 10%;
     height: 2px;
-    background: #ff3333;
-    box-shadow: 0 0 15px #ff3333, 0 0 5px #fff;
-    border-radius: 50%;
+    background: #00ff00;
+    /* Changed to Green for 'Scanning' feel */
+    box-shadow: 0 0 15px #00ff00;
     animation: scanMove 2.5s ease-in-out infinite;
 }
 
@@ -122,55 +148,103 @@
     }
 }
 
-.scan-tip {
-    margin-top: 60px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 10px 24px;
+.scan-controls {
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    pointer-events: auto;
+}
+
+.zoom-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 20px;
     border-radius: var(--radius-full);
+    backdrop-filter: blur(10px);
+    width: 80%;
+    max-width: 300px;
+}
+
+.zoom-slider-container span {
+    color: white;
+    font-size: 20px;
+}
+
+.zoom-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.scan-tip {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 16px;
+    border-radius: 4px;
 }
 
 .scan-tip p {
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: -0.2px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    text-align: center;
 }
 
 .scan-footer {
     position: absolute;
-    bottom: 32px;
+    bottom: 40px;
     left: 0;
     right: 0;
     z-index: 20;
     display: flex;
     justify-content: center;
+    pointer-events: auto;
 }
 
-.scan-footer .btn {
-    width: auto;
-    min-width: 200px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.9);
-    color: #000;
-    font-weight: 800;
-    padding: 16px 32px;
+.upload-btn {
+    backdrop-filter: blur(10px) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: none !important;
+    color: #000 !important;
+    width: auto !important;
+    padding: 14px 28px !important;
+    border-radius: var(--radius-full) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* 라이브러리 기본 UI 숨기기 (더블 프레임 방지) */
-#scanner-container img[alt="Info icon"],
-#scanner-container img[alt="Camera menu icon"],
-#scanner-container button {
+.scanner-status {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: 600;
+}
+
+.scanner-status.error {
+    color: #ff5555;
+}
+
+/* Hide library UI */
+#scanner-container button,
+#scanner-container img {
     display: none !important;
 }
 
-#scanner-container video {
-    border-radius: 0 !important;
-}
-
-/* html5-qrcode 내부 가이드 라인 및 그림자 숨기기 */
 #qr-shaded-region {
     display: none !important;
 }
