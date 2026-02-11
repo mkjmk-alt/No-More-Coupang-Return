@@ -85,6 +85,25 @@ export const translations = {
             connectionError: 'Gemini API 호출에 실패했습니다. API 키를 확인하세요.',
             thinking: 'AI가 분석 중입니다...',
             apiKeyRequired: '설정에서 Gemini API 키를 먼저 등록해 주세요.'
+        },
+        expiration: {
+            title: '유통(소비)기한 가이드',
+            sub: '쿠팡 로켓배송 및 로켓그로스 입고 가능한 소비기한 기준을 확인하세요.',
+            domestic: '국내 상품',
+            imported: '수입 상품',
+            remaining: '잔여 유통기간',
+            criteria50: '50% 이상 남음',
+            criteria40: '40% 이상 남음',
+            mfgDate: '제조일자 관리 상품',
+            diaper: '기저귀',
+            wetWipes: '물티슈',
+            petWipes: 'Pet 물티슈',
+            grains: '잡곡/쌀',
+            grainsTip: '잡곡: 14일 이내 포장 / 쌀: 7일 이내 도정',
+            tipTitle: '입고 꿀팁',
+            tip1: '연월일(YYYY.MM.DD) 표기가 원칙입니다.',
+            tip2: '연월(YYYY.MM) 표기 시 해당 월의 1일로 간주합니다.',
+            tip3: '입고 시점 기준으로 잔여 기간을 계산합니다.'
         }
     },
     en: {
@@ -171,6 +190,25 @@ export const translations = {
             connectionError: 'Gemini API call failed. Check your API key.',
             thinking: 'AI is analyzing...',
             apiKeyRequired: 'Please register your Gemini API key in settings first.'
+        },
+        expiration: {
+            title: 'Expiration Guide',
+            sub: 'Check the consumption date standards for Coupang inbound.',
+            domestic: 'Domestic',
+            imported: 'Imported',
+            remaining: 'Remaining Period',
+            criteria50: '50% or more',
+            criteria40: '40% or more',
+            mfgDate: 'Mfg. Date Items',
+            diaper: 'Diapers',
+            wetWipes: 'Wet Wipes',
+            petWipes: 'Pet Wipes',
+            grains: 'Grains/Rice',
+            grainsTip: 'Grains: 14d / Rice: 7d',
+            tipTitle: 'Quick Tips',
+            tip1: 'YYYY.MM.DD format is required.',
+            tip2: 'YYYY.MM is treated as the 1st of the month.',
+            tip3: 'Remaining period is based on the arrival date.'
         }
     }
 };
