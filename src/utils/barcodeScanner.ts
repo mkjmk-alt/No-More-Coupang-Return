@@ -263,45 +263,6 @@ export class NativeBarcodeScanner {
         this.torchEnabled = false;
     }
 
-    async applyZoom(zoom: number): Promise<void> {
-        if (!this.stream) return;
-        const track = this.stream.getVideoTracks()[0];
-        if (!track) return;
-
-        let hardwareZoomSuccess = false;
-        try {
-            const capabilities = track.getCapabilities() as any;
-            // Safari often doesn't report zoom capabilities even if it might support it in the future,
-            // or reports it but ignores applyConstraints.
-            if (capabilities && capabilities.zoom) {
-                const zoomVal = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, zoom));
-                await track.applyConstraints({
-                    advanced: [{ zoom: zoomVal } as any]
-                });
-                hardwareZoomSuccess = true;
-            }
-        } catch (err) {
-            console.error('Native hardware zoom failed:', err);
-        }
-
-        // Digital zoom fallback
-        if (this.videoElement) {
-            const videoStyle = this.videoElement.style;
-            if (hardwareZoomSuccess) {
-                videoStyle.transform = 'scale3d(1, 1, 1)';
-                (videoStyle as any).webkitTransform = 'scale3d(1, 1, 1)';
-            } else {
-                const transformStr = `scale3d(${zoom}, ${zoom}, 1)`;
-                videoStyle.transform = transformStr;
-                (videoStyle as any).webkitTransform = transformStr;
-                videoStyle.transformOrigin = 'center';
-
-                if (this.videoElement.parentElement) {
-                    this.videoElement.parentElement.style.overflow = 'hidden';
-                }
-            }
-        }
-    }
 
     getIsScanning(): boolean {
         return this.isScanning;
@@ -353,20 +314,6 @@ export class NativeBarcodeScanner {
         }
     }
 
-    // 줌 지원 여부 확인
-    async isZoomSupported(): Promise<boolean> {
-        if (!this.stream) return false;
-
-        const track = this.stream.getVideoTracks()[0];
-        if (!track) return false;
-
-        try {
-            const capabilities = track.getCapabilities() as any;
-            return !!capabilities.zoom;
-        } catch {
-            return false;
-        }
-    }
 
     // 사용 가능한 후면 카메라 목록 가져오기
     async getAvailableCameras(): Promise<{ deviceId: string; label: string }[]> {
@@ -554,63 +501,7 @@ export class BarcodeScanner {
         }
     }
 
-    async applyZoom(zoom: number): Promise<void> {
-        if (!this.html5QrCode || !this.isScanning) return;
-        try {
-            // @ts-ignore - access internal track
-            const track = (this.html5QrCode as any).getRunningTrack();
-            let hardwareZoomSuccess = false;
 
-            if (track) {
-                const capabilities = track.getCapabilities() as any;
-                if (capabilities && capabilities.zoom) {
-                    const zoomVal = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min, zoom));
-                    await track.applyConstraints({
-                        advanced: [{ zoom: zoomVal } as any]
-                    });
-                    hardwareZoomSuccess = true;
-                }
-            }
-
-            // Digital zoom fallback
-            const container = document.getElementById(this.containerId);
-            const video = container?.querySelector('video');
-            if (video) {
-                const videoStyle = video.style;
-                if (hardwareZoomSuccess) {
-                    videoStyle.transform = 'scale3d(1, 1, 1)';
-                    (videoStyle as any).webkitTransform = 'scale3d(1, 1, 1)';
-                } else {
-                    const transformStr = `scale3d(${zoom}, ${zoom}, 1)`;
-                    videoStyle.transform = transformStr;
-                    (videoStyle as any).webkitTransform = transformStr;
-                    videoStyle.transformOrigin = 'center';
-
-                    // Safari compatibility: Ensure parent container doesn't clip or behave weirdly
-                    if (video.parentElement) {
-                        video.parentElement.style.overflow = 'hidden';
-                    }
-                }
-            }
-        } catch (err) {
-            console.error('Html5Qrcode zoom failed:', err);
-        }
-    }
-
-    async isZoomSupported(): Promise<boolean> {
-        if (!this.html5QrCode || !this.isScanning) return false;
-        try {
-            // @ts-ignore
-            const track = (this.html5QrCode as any).getRunningTrack();
-            if (track) {
-                const capabilities = track.getCapabilities() as any;
-                return !!capabilities.zoom;
-            }
-            return false;
-        } catch {
-            return false;
-        }
-    }
 
     getIsScanning(): boolean {
         return this.isScanning;
