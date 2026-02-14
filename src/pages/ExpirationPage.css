@@ -173,11 +173,33 @@
     border: 1px dashed var(--border-color);
 }
 
-/* Validator Section */
-.validator-section {
-    padding: 24px;
-    border: 2px solid rgba(0, 102, 255, 0.2);
+/* Validator Type Toggle */
+.validator-type-toggle {
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 4px;
+    border-radius: var(--radius-md);
 }
+
+.type-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.type-btn.active {
+    background: white;
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
 
 .validator-grid {
     display: grid;
