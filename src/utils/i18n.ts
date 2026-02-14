@@ -104,20 +104,24 @@ export const translations = {
             tip1: '연월일(YYYY.MM.DD) 표기가 원칙입니다.',
             tip2: '연월(YYYY.MM) 표기 시 해당 월의 1일로 간주합니다.',
             tip3: '입고 시점 기준으로 잔여 기간을 계산합니다.',
-            unifiedValidatorTitle: '스마트 자동 입고 판정기',
+            unifiedValidatorTitle: '제조/유통 입고 판정기',
             typeExpiry: '소비기한 검수',
             typeMfg: '제조일자 검수',
             physicalLabel: '실물 상품 날짜',
             systemLabel: '시스템 입력 날짜',
             stickerCovered: '실물의 날짜 표시 가려짐 여부',
+            physicalMissing: '실물 상품에 날짜 표시 없음',
+            systemMissing: '시스템에 날짜 정보 미입력',
             btnCheck: '판정하기',
             resultPass: '✅ 입고 가능',
             resultFail: '❌ 회송 대상',
             reasonShort: '실물 소비기한이 시스템 정보보다 짧음',
             reasonMismatch: '실물 날짜가 시스템 정보와 불일치',
+            reasonMissingPhysical: '실물 상품에 날짜 표시가 없음',
+            reasonMissingSystem: '시스템에 날짜 정보가 입력되지 않음',
             reasonSticker: '날짜 표시가 가려져 있음 (스티커 등)',
             reasonBoth: '기한/정보 불일치 및 표시 가려짐',
-            strictNotice: '단 하루라도 짧거나 다르면 회송 처리되므로 주의하세요.'
+            strictNotice: '날짜가 시스템 정보와 다르거나 단 하루라도 짧으면 회송 처리됩니다.'
         }
     },
     en: {
@@ -223,20 +227,24 @@ export const translations = {
             tip1: 'YYYY.MM.DD format is required.',
             tip2: 'YYYY.MM is treated as the 1st of the month.',
             tip3: 'Remaining period is based on the arrival date.',
-            unifiedValidatorTitle: 'Smart Inbound Validator',
+            unifiedValidatorTitle: 'Mfg/Expiry Inbound Validator',
             typeExpiry: 'Expiration Check',
             typeMfg: 'Mfg. Date Check',
             physicalLabel: 'Physical Date',
             systemLabel: 'System Date',
             stickerCovered: 'Is Date Obscured?',
+            physicalMissing: 'No date on physical product',
+            systemMissing: 'No date entered in system',
             btnCheck: 'Validate',
             resultPass: '✅ Pass',
             resultFail: '❌ Return',
             reasonShort: 'Physical expiry is shorter than system info',
             reasonMismatch: 'Physical date mismatch with system info',
+            reasonMissingPhysical: 'Date is missing on physical product',
+            reasonMissingSystem: 'Date is not entered in system',
             reasonSticker: 'Date is obscured (sticker, etc.)',
             reasonBoth: 'Date mismatch & Obscured',
-            strictNotice: 'Even one day shorter or different results in a return.'
+            strictNotice: 'Any mismatch or shorter date results in a return.'
         }
     }
 };

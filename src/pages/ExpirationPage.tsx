@@ -10,8 +10,15 @@ export function ExpirationPage() {
     const [physicalDate, setPhysicalDate] = useState('');
     const [systemDate, setSystemDate] = useState('');
     const [isObscured, setIsObscured] = useState(false);
+    const [isPhysicalMissing, setIsPhysicalMissing] = useState(false);
+    const [isSystemMissing, setIsSystemMissing] = useState(false);
 
     const validationResult = useMemo(() => {
+        // 1. Check for immediate failures (Missing or Obscured)
+        if (isObscured) return { status: 'fail', reason: t.expiration.reasonSticker };
+        if (isPhysicalMissing) return { status: 'fail', reason: t.expiration.reasonMissingPhysical };
+        if (isSystemMissing) return { status: 'fail', reason: t.expiration.reasonMissingSystem };
+
         if (!physicalDate || !systemDate) return null;
 
         const pDate = new Date(physicalDate);
@@ -21,15 +28,12 @@ export function ExpirationPage() {
         pDate.setHours(0, 0, 0, 0);
         sDate.setHours(0, 0, 0, 0);
 
-        // Common condition: Label obscured
-        if (isObscured) {
-            return { status: 'fail', reason: t.expiration.reasonSticker };
-        }
-
         if (validatorType === 'EXPIRY') {
-            // Expiration Logic: Physical must be >= System
-            if (pDate < sDate) {
-                return { status: 'fail', reason: t.expiration.reasonShort };
+            // Expiration Logic: Strictly match or Physical must be >= System
+            // User requested: "두 값이 다를 경우 회송으로 안내해줘" 
+            if (pDate.getTime() !== sDate.getTime()) {
+                if (pDate < sDate) return { status: 'fail', reason: t.expiration.reasonShort };
+                return { status: 'fail', reason: t.expiration.reasonMismatch };
             }
         } else {
             // Manufacturing Logic: Physical must be EXACTLY SAME as System
@@ -39,7 +43,7 @@ export function ExpirationPage() {
         }
 
         return { status: 'pass', reason: t.expiration.resultPass };
-    }, [physicalDate, systemDate, validatorType, isObscured, t.expiration]);
+    }, [physicalDate, systemDate, validatorType, isObscured, isPhysicalMissing, isSystemMissing, t.expiration]);
 
     return (
         <div className="expiration-page container animate-fade">
@@ -79,6 +83,7 @@ export function ExpirationPage() {
                                 className="input-field"
                                 value={physicalDate}
                                 onChange={(e) => setPhysicalDate(e.target.value)}
+                                disabled={isPhysicalMissing}
                             />
                         </div>
                         <div className="input-group">
@@ -88,9 +93,29 @@ export function ExpirationPage() {
                                 className="input-field"
                                 value={systemDate}
                                 onChange={(e) => setSystemDate(e.target.value)}
+                                disabled={isSystemMissing}
                             />
                         </div>
-                        <div className="input-group checkbox-group">
+
+                        <div className="checkbox-stack mt-2">
+                            <label className="checkbox-container">
+                                <input
+                                    type="checkbox"
+                                    checked={isPhysicalMissing}
+                                    onChange={(e) => setIsPhysicalMissing(e.target.checked)}
+                                />
+                                <span className="checkmark"></span>
+                                {t.expiration.physicalMissing}
+                            </label>
+                            <label className="checkbox-container">
+                                <input
+                                    type="checkbox"
+                                    checked={isSystemMissing}
+                                    onChange={(e) => setIsSystemMissing(e.target.checked)}
+                                />
+                                <span className="checkmark"></span>
+                                {t.expiration.systemMissing}
+                            </label>
                             <label className="checkbox-container">
                                 <input
                                     type="checkbox"
