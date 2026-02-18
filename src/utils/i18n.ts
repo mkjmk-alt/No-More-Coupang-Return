@@ -121,7 +121,7 @@ export const translations = {
             reasonMissingSystem: '시스템에 날짜 정보가 입력되지 않음',
             reasonSticker: '날짜 표시가 가려져 있음 (스티커 등)',
             reasonBoth: '기한/정보 불일치 및 표시 가려짐',
-            strictNotice: '날짜가 시스템 정보와 다르거나 단 하루라도 짧으면 회송 처리됩니다.'
+            strictNotice: '실물 날짜가 시스템 정보보다 단 하루라도 짧으면 예외 없이 회송 처리됩니다.'
         }
     },
     en: {
@@ -244,7 +244,7 @@ export const translations = {
             reasonMissingSystem: 'Date is not entered in system',
             reasonSticker: 'Date is obscured (sticker, etc.)',
             reasonBoth: 'Date mismatch & Obscured',
-            strictNotice: 'Any mismatch or shorter date results in a return.'
+            strictNotice: 'If the physical date is shorter than the system info by even one day, it will be returned.'
         }
     }
 };

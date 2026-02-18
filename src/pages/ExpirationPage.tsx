@@ -28,18 +28,8 @@ export function ExpirationPage() {
         pDate.setHours(0, 0, 0, 0);
         sDate.setHours(0, 0, 0, 0);
 
-        if (validatorType === 'EXPIRY') {
-            // Expiration Logic: Strictly match or Physical must be >= System
-            // User requested: "두 값이 다를 경우 회송으로 안내해줘" 
-            if (pDate.getTime() !== sDate.getTime()) {
-                if (pDate < sDate) return { status: 'fail', reason: t.expiration.reasonShort };
-                return { status: 'fail', reason: t.expiration.reasonMismatch };
-            }
-        } else {
-            // Manufacturing Logic: Physical must be EXACTLY SAME as System
-            if (pDate.getTime() !== sDate.getTime()) {
-                return { status: 'fail', reason: t.expiration.reasonMismatch };
-            }
+        if (pDate < sDate) {
+            return { status: 'fail', reason: t.expiration.reasonShort };
         }
 
         return { status: 'pass', reason: t.expiration.resultPass };

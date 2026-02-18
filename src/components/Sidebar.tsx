@@ -34,12 +34,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             items: [
                 { path: '/expiration', label: t.nav.categories.expiration, icon: 'calendar_today' },
             ]
-        },
-        {
-            title: t.nav.categories.ai,
-            items: [
-                { path: '/ai', label: t.nav.ai, icon: 'smart_toy' },
-            ]
         }
     ];
 

@@ -16,7 +16,7 @@ export function Header() {
             case '/scan': return t.nav.scanner;
             case '/test': return t.nav.records;
             case '/compare': return t.compare.title;
-            case '/ai': return t.ai.title;
+            case '/expiration': return t.expiration.title;
             default: return 'Barcode App';
         }
     };
@@ -83,13 +83,6 @@ export function BottomNav() {
                 >
                     <span className="material-symbols-outlined">history</span>
                     <span>{t.nav.records}</span>
-                </button>
-                <button
-                    className={`nav-item ${location.pathname === '/ai' ? 'active' : ''}`}
-                    onClick={() => navigate('/ai')}
-                >
-                    <span className="material-symbols-outlined">smart_toy</span>
-                    <span>{t.nav.ai}</span>
                 </button>
             </div>
         </nav>

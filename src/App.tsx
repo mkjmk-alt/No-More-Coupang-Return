@@ -4,7 +4,7 @@ import { ScanPage } from './pages/ScanPage';
 import { GeneratePage } from './pages/GeneratePage';
 import { TestPage } from './pages/TestPage';
 import { ComparePage } from './pages/ComparePage';
-import { AiAssistantPage } from './pages/AiAssistantPage';
+// import { AiAssistantPage } from './pages/AiAssistantPage';
 import { ExpirationPage } from './pages/ExpirationPage';
 import { LanguageProvider } from './utils/LanguageContext';
 import './App.css';
@@ -22,7 +22,7 @@ function AppContent() {
           <Route path="/scan" element={<ScanPage />} />
           <Route path="/test" element={<TestPage />} />
           <Route path="/compare" element={<ComparePage />} />
-          <Route path="/ai" element={<AiAssistantPage />} />
+          {/* <Route path="/ai" element={<AiAssistantPage />} /> */}
           <Route path="/expiration" element={<ExpirationPage />} />
         </Routes>
       </main>
