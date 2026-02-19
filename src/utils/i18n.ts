@@ -74,7 +74,17 @@ export const translations = {
             original: '원본 이미지',
             generated: '생성된 바코드',
             opacity: '겹치기 투명도',
-            uploadNew: '새 이미지 업로드'
+            uploadNew: '새 이미지 업로드',
+            dualTitle: '인식 결과 선택',
+            barcodeScan: '바코드 스캔',
+            ocrScan: 'OCR 텍스트 인식',
+            scanSuccess: '인식 성공',
+            scanFail: '인식 실패',
+            useThis: '이 결과 사용',
+            selected: '선택됨',
+            format: '형식',
+            scanningBarcode: '바코드 스캔 중...',
+            scanningOCR: 'OCR 인식 중...'
         },
         ai: {
             title: 'Gemini AI 어시스턴트',
@@ -197,7 +207,17 @@ export const translations = {
             original: 'Original',
             generated: 'Generated',
             opacity: 'Overlay Opacity',
-            uploadNew: 'Upload New Image'
+            uploadNew: 'Upload New Image',
+            dualTitle: 'Select Recognition Result',
+            barcodeScan: 'Barcode Scan',
+            ocrScan: 'OCR Text Recognition',
+            scanSuccess: 'Success',
+            scanFail: 'Failed',
+            useThis: 'Use This',
+            selected: 'Selected',
+            format: 'Format',
+            scanningBarcode: 'Scanning barcode...',
+            scanningOCR: 'OCR processing...'
         },
         ai: {
             title: 'Gemini AI Assistant',

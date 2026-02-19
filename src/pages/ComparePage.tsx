@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Tesseract from 'tesseract.js';
+import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from '@zxing/library';
 import { generateBarcode } from '../utils/barcodeGenerator';
 import type { BarcodeType } from '../utils/barcodeGenerator';
 import { WhitespaceInspector } from '../components/WhitespaceInspector';
@@ -12,6 +13,14 @@ type CompareMode = 'side-by-side' | 'overlay';
 interface ImageDimensions {
     width: number;
     height: number;
+}
+
+interface RecognitionResult {
+    text: string;
+    confidence: number;
+    source: 'barcode' | 'ocr';
+    format?: string;
+    success: boolean;
 }
 
 interface CompareResult {
@@ -78,22 +87,15 @@ const preprocessImageForOCR = (dataUrl: string): Promise<string> => {
             canvas.height = img.height;
             const ctx = canvas.getContext('2d')!;
 
-            // Draw original
             ctx.drawImage(img, 0, 0);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
 
             for (let i = 0; i < data.length; i += 4) {
-                // Grayscale
                 const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-
-                // Contrast boost (factor 1.5)
                 let enhanced = ((gray - 128) * 1.5) + 128;
                 enhanced = Math.max(0, Math.min(255, enhanced));
-
-                // Binarize (Otsu-like threshold at 128)
                 const binary = enhanced > 128 ? 255 : 0;
-
                 data[i] = binary;
                 data[i + 1] = binary;
                 data[i + 2] = binary;
@@ -105,6 +107,84 @@ const preprocessImageForOCR = (dataUrl: string): Promise<string> => {
         img.onerror = () => resolve(dataUrl);
         img.src = dataUrl;
     });
+};
+
+// Strip ALL invisible/whitespace characters for clean barcode text
+const stripInvisibleChars = (text: string): string => {
+    // Remove all Unicode whitespace, zero-width characters, control characters
+    return text.replace(/[\s\u200B\u200C\u200D\uFEFF\u00A0\u2000-\u200A\u202F\u205F\u3000\r\n\t]/g, '');
+};
+
+// Barcode scanning with ZXing
+const scanBarcodeFromImage = async (imageDataUrl: string): Promise<RecognitionResult> => {
+    try {
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+            BarcodeFormat.CODE_128, BarcodeFormat.CODE_39,
+            BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
+            BarcodeFormat.UPC_A, BarcodeFormat.UPC_E,
+            BarcodeFormat.ITF, BarcodeFormat.CODABAR
+        ]);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+
+        const reader = new BrowserMultiFormatReader(hints);
+        const result = await reader.decodeFromImageUrl(imageDataUrl);
+
+        if (result) {
+            const text = stripInvisibleChars(result.getText());
+            const formatCode = result.getBarcodeFormat();
+            const formatMap: Record<number, string> = {
+                [BarcodeFormat.CODE_128]: 'CODE_128',
+                [BarcodeFormat.CODE_39]: 'CODE_39',
+                [BarcodeFormat.EAN_13]: 'EAN_13',
+                [BarcodeFormat.EAN_8]: 'EAN_8',
+                [BarcodeFormat.UPC_A]: 'UPC_A',
+                [BarcodeFormat.UPC_E]: 'UPC_E',
+                [BarcodeFormat.ITF]: 'ITF',
+                [BarcodeFormat.CODABAR]: 'CODABAR'
+            };
+            return {
+                text,
+                confidence: 100,
+                source: 'barcode',
+                format: formatMap[formatCode] || 'UNKNOWN',
+                success: true
+            };
+        }
+    } catch {
+        // ZXing failed, try native if available
+    }
+
+    // Try native BarcodeDetector
+    if ('BarcodeDetector' in window) {
+        try {
+            const img = new Image();
+            await new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = reject;
+                img.src = imageDataUrl;
+            });
+            const bitmap = await createImageBitmap(img);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const detector = new (window as any).BarcodeDetector({
+                formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf', 'codabar']
+            });
+            const barcodes = await detector.detect(bitmap);
+            if (barcodes.length > 0) {
+                return {
+                    text: stripInvisibleChars(barcodes[0].rawValue),
+                    confidence: 100,
+                    source: 'barcode',
+                    format: barcodes[0].format?.toUpperCase() || 'DETECTED',
+                    success: true
+                };
+            }
+        } catch {
+            // Native failed too
+        }
+    }
+
+    return { text: '', confidence: 0, source: 'barcode', success: false };
 };
 
 export function ComparePage() {
@@ -124,6 +204,13 @@ export function ComparePage() {
 
     const [offsetX, setOffsetX] = useState(0);
     const [offsetY, setOffsetY] = useState(0);
+
+    // Dual recognition results
+    const [barcodeResult, setBarcodeResult] = useState<RecognitionResult | null>(null);
+    const [ocrResult, setOcrResult] = useState<RecognitionResult | null>(null);
+    const [selectedSource, setSelectedSource] = useState<'barcode' | 'ocr' | null>(null);
+    const [pendingDisplayImage, setPendingDisplayImage] = useState<string | null>(null);
+    const [pendingDimensions, setPendingDimensions] = useState<ImageDimensions | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -150,7 +237,8 @@ export function ComparePage() {
                 bestMatch = cleanLine;
             }
         }
-        return bestMatch || cleaned.replace(/[\s\n]/g, '');
+        const result = bestMatch || cleaned.replace(/[\s\n]/g, '');
+        return stripInvisibleChars(result);
     };
 
     const detectBarcodeType = (text: string): BarcodeType => {
@@ -162,35 +250,92 @@ export function ComparePage() {
         return 'CODE128';
     };
 
+    const formatToBarcodeType = (format: string | undefined): BarcodeType => {
+        if (!format) return 'CODE128';
+        const f = format.toUpperCase().replace('_', '');
+        if (f.includes('EAN13') || f === 'EAN_13') return 'EAN13';
+        if (f.includes('EAN8') || f === 'EAN_8') return 'EAN8';
+        if (f.includes('CODE39') || f === 'CODE_39') return 'CODE39';
+        if (f.includes('CODE128') || f === 'CODE_128') return 'CODE128';
+        return 'CODE128';
+    };
+
     const processImage = async (displayImageUrl: string, ocrImageUrl: string) => {
         setStatus('recognizing');
         setProgress(0);
         setError('');
+        setBarcodeResult(null);
+        setOcrResult(null);
+        setSelectedSource(null);
+        setResult(null);
 
+        const originalDimensions = await getImageDimensions(displayImageUrl);
+        setPendingDisplayImage(displayImageUrl);
+        setPendingDimensions(originalDimensions);
+
+        // Run barcode scan and OCR in parallel
+        const barcodePromise = scanBarcodeFromImage(ocrImageUrl);
+        const ocrPromise = (async (): Promise<RecognitionResult> => {
+            try {
+                const preprocessed = await preprocessImageForOCR(ocrImageUrl);
+                const result = await Tesseract.recognize(
+                    preprocessed,
+                    'eng+kor',
+                    {
+                        logger: (m) => { if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100)); },
+                    }
+                );
+                const text = cleanBarcodeText(result.data.text);
+                return {
+                    text,
+                    confidence: result.data.confidence,
+                    source: 'ocr',
+                    success: text.length > 0
+                };
+            } catch {
+                return { text: '', confidence: 0, source: 'ocr', success: false };
+            }
+        })();
+
+        const [barcodeRes, ocrRes] = await Promise.all([barcodePromise, ocrPromise]);
+        setBarcodeResult(barcodeRes);
+        setOcrResult(ocrRes);
+
+        // Auto-select best result
+        if (barcodeRes.success && ocrRes.success) {
+            // Both succeeded — show selection UI
+            // Default to barcode scan (more reliable for barcodes)
+            setSelectedSource('barcode');
+            setStatus('complete');
+        } else if (barcodeRes.success) {
+            await useRecognitionResult(barcodeRes, displayImageUrl, originalDimensions);
+        } else if (ocrRes.success) {
+            await useRecognitionResult(ocrRes, displayImageUrl, originalDimensions);
+        } else {
+            setStatus('error');
+            setError('바코드와 텍스트 모두 인식할 수 없습니다. 더 선명한 이미지로 다시 시도해주세요.');
+        }
+    };
+
+    const useRecognitionResult = async (
+        recognition: RecognitionResult,
+        displayImageUrl: string,
+        originalDimensions: ImageDimensions
+    ) => {
+        const text = stripInvisibleChars(recognition.text);
+        setManualText(text);
+
+        const detectedType = recognition.source === 'barcode'
+            ? formatToBarcodeType(recognition.format)
+            : detectBarcodeType(text);
+
+        setBarcodeType(detectedType);
+        setRecommendedType(detectedType);
+        setSelectedSource(recognition.source);
+
+        setStatus('generating');
         try {
-            const originalDimensions = await getImageDimensions(displayImageUrl);
-
-            // Preprocess image for better OCR accuracy
-            const preprocessed = await preprocessImageForOCR(ocrImageUrl);
-
-            const ocrResult = await Tesseract.recognize(
-                preprocessed,
-                'eng+kor',
-                {
-                    logger: (m) => { if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100)); },
-                }
-            );
-
-            const recognizedText = cleanBarcodeText(ocrResult.data.text);
-            if (!recognizedText) throw new Error(t.scan.errorRecognition);
-
-            setManualText(recognizedText);
-            const detectedType = detectBarcodeType(recognizedText);
-            setBarcodeType(detectedType);
-            setRecommendedType(detectedType);
-
-            setStatus('generating');
-            const generatedBarcode = await generateBarcode(recognizedText, detectedType, {
+            const generatedBarcode = await generateBarcode(text, detectedType, {
                 fontSize: 16, height: 80, margin: 10, lineColor: '#000000'
             });
 
@@ -202,10 +347,10 @@ export function ComparePage() {
             setResult({
                 originalImage: displayImageUrl,
                 originalDimensions,
-                recognizedText,
+                recognizedText: text,
                 generatedBarcode,
                 barcodeType: detectedType,
-                confidence: ocrResult.data.confidence
+                confidence: recognition.confidence
             });
             setStatus('complete');
         } catch (err) {
@@ -214,13 +359,20 @@ export function ComparePage() {
         }
     };
 
+    const handleSelectResult = async (source: 'barcode' | 'ocr') => {
+        const recognition = source === 'barcode' ? barcodeResult : ocrResult;
+        if (!recognition?.success || !pendingDisplayImage || !pendingDimensions) return;
+
+        setSelectedSource(source);
+        await useRecognitionResult(recognition, pendingDisplayImage, pendingDimensions);
+    };
+
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 const rawDataUrl = ev.target?.result as string;
-                // Display: small for UI, OCR: larger for accuracy
                 const [displayImage, ocrImage] = await Promise.all([
                     resizeImageTo(rawDataUrl, MAX_DISPLAY_SIZE),
                     resizeImageTo(rawDataUrl, MAX_OCR_SIZE, 0.92),
@@ -235,13 +387,15 @@ export function ComparePage() {
         if (!manualText.trim() || !result) return;
         setStatus('generating');
         try {
-            const generatedBarcode = await generateBarcode(manualText.trim(), barcodeType, {
+            const cleanText = stripInvisibleChars(manualText.trim());
+            const generatedBarcode = await generateBarcode(cleanText, barcodeType, {
                 fontSize: 16, height: 80, margin: 10, lineColor: '#000000'
             });
             if (!generatedBarcode) throw new Error('Failed to regenerate.');
             const genDimensions = await getImageDimensions(generatedBarcode);
             setGeneratedDimensions(genDimensions);
-            setResult({ ...result, recognizedText: manualText.trim(), generatedBarcode, barcodeType });
+            setResult({ ...result, recognizedText: cleanText, generatedBarcode, barcodeType });
+            setManualText(cleanText);
             setStatus('complete');
         } catch (err) {
             setError('Failed to regenerate barcode.');
@@ -254,6 +408,11 @@ export function ComparePage() {
         setResult(null);
         setError('');
         setManualText('');
+        setBarcodeResult(null);
+        setOcrResult(null);
+        setSelectedSource(null);
+        setPendingDisplayImage(null);
+        setPendingDimensions(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -265,6 +424,58 @@ export function ComparePage() {
             transform: `translate(${offsetX}px, ${offsetY}px)`,
             transition: 'transform 0.1s ease-out'
         };
+    };
+
+    const renderRecognitionCard = (
+        recognition: RecognitionResult | null,
+        source: 'barcode' | 'ocr',
+        label: string,
+        icon: string
+    ) => {
+        const isSelected = selectedSource === source;
+        return (
+            <div
+                className={`recognition-card ${isSelected ? 'selected' : ''} ${recognition?.success ? 'success' : 'failed'}`}
+                onClick={() => recognition?.success && handleSelectResult(source)}
+                style={{ cursor: recognition?.success ? 'pointer' : 'default' }}
+            >
+                <div className="recognition-card-header">
+                    <span className="recognition-card-icon">{icon}</span>
+                    <span className="recognition-card-label">{label}</span>
+                    {recognition?.success ? (
+                        <span className="recognition-status success">✓ {t.compare.scanSuccess}</span>
+                    ) : (
+                        <span className="recognition-status failed">✗ {t.compare.scanFail}</span>
+                    )}
+                </div>
+                {recognition?.success ? (
+                    <div className="recognition-card-body">
+                        <code className="recognition-text">{recognition.text}</code>
+                        {recognition.format && (
+                            <span className="recognition-format">{t.compare.format}: {recognition.format}</span>
+                        )}
+                        {recognition.confidence > 0 && (
+                            <span className="recognition-confidence">
+                                {recognition.confidence.toFixed(1)}% {t.compare.confidence}
+                            </span>
+                        )}
+                        <button
+                            className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'} btn-sm mt-1`}
+                            style={{ width: 'auto' }}
+                            onClick={(e) => { e.stopPropagation(); handleSelectResult(source); }}
+                        >
+                            {isSelected ? `✓ ${t.compare.selected}` : t.compare.useThis}
+                        </button>
+                    </div>
+                ) : (
+                    <div className="recognition-card-body">
+                        <p className="text-muted" style={{ fontSize: '13px' }}>
+                            {source === 'barcode' ? '바코드를 인식할 수 없습니다.' : 'OCR로 텍스트를 인식할 수 없습니다.'}
+                        </p>
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -301,98 +512,117 @@ export function ComparePage() {
                 </section>
             )}
 
-            {status === 'complete' && result && (
+            {status === 'complete' && (barcodeResult || ocrResult) && (
                 <>
-                    <section className="section glass-card">
-                        <h3 className="section-title">{t.compare.resultTitle}</h3>
-                        <div className="recognition-info">
-                            <div className="info-item">
-                                <span className="info-label">{t.compare.labelResult}</span>
-                                <input type="text" className="input-field" value={manualText} onChange={(e) => setManualText(e.target.value)} />
-                                <span className={`confidence-badge ${result.confidence > 80 ? 'high' : result.confidence > 50 ? 'medium' : 'low'}`}>
-                                    {result.confidence.toFixed(1)}% {t.compare.confidence}
-                                </span>
-                                <WhitespaceInspector text={manualText} />
+                    {/* Dual Recognition Results */}
+                    {barcodeResult && ocrResult && (barcodeResult.success || ocrResult.success) && (
+                        <section className="section glass-card">
+                            <h3 className="section-title">
+                                <span className="material-symbols-outlined">compare_arrows</span>
+                                {t.compare.dualTitle}
+                            </h3>
+                            <div className="recognition-cards">
+                                {renderRecognitionCard(barcodeResult, 'barcode', t.compare.barcodeScan, '📊')}
+                                {renderRecognitionCard(ocrResult, 'ocr', t.compare.ocrScan, '🔤')}
                             </div>
-                            <div className="info-item">
-                                <span className="info-label">{t.compare.labelFormat}</span>
-                                <select className="input-field" value={barcodeType} onChange={(e) => setBarcodeType(e.target.value as BarcodeType)}>
-                                    {BARCODE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                </select>
-                                {recommendedType && (
-                                    <div className="recommendation-badge">
-                                        ✨ {t.compare.recommended}: <strong>{BARCODE_TYPES.find(t => t.value === recommendedType)?.label}</strong>
+                        </section>
+                    )}
+
+                    {/* Result section after selection */}
+                    {result && (
+                        <>
+                            <section className="section glass-card">
+                                <h3 className="section-title">{t.compare.resultTitle}</h3>
+                                <div className="recognition-info">
+                                    <div className="info-item">
+                                        <span className="info-label">{t.compare.labelResult}</span>
+                                        <input type="text" className="input-field" value={manualText} onChange={(e) => setManualText(e.target.value)} />
+                                        <span className={`confidence-badge ${result.confidence > 80 ? 'high' : result.confidence > 50 ? 'medium' : 'low'}`}>
+                                            {result.confidence.toFixed(1)}% {t.compare.confidence}
+                                        </span>
+                                        <WhitespaceInspector text={manualText} />
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="info-label">{t.compare.labelFormat}</span>
+                                        <select className="input-field" value={barcodeType} onChange={(e) => setBarcodeType(e.target.value as BarcodeType)}>
+                                            {BARCODE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                        </select>
+                                        {recommendedType && (
+                                            <div className="recommendation-badge">
+                                                ✨ {t.compare.recommended}: <strong>{BARCODE_TYPES.find(t => t.value === recommendedType)?.label}</strong>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button className="btn btn-secondary mt-1" onClick={handleManualRegenerate}>
+                                        <span className="material-symbols-outlined">refresh</span> {t.compare.btnRegenerate}
+                                    </button>
+                                </div>
+                            </section>
+
+                            <section className="section glass-card comparison-section">
+                                <div className="comparison-header">
+                                    <h3 className="section-title">{t.compare.compareTitle}</h3>
+                                    <div className="compare-mode-toggle">
+                                        <button className={`mode-btn ${compareMode === 'side-by-side' ? 'active' : ''}`} onClick={() => setCompareMode('side-by-side')}>{t.compare.modeSide}</button>
+                                        <button className={`mode-btn ${compareMode === 'overlay' ? 'active' : ''}`} onClick={() => setCompareMode('overlay')}>{t.compare.modeOverlay}</button>
+                                    </div>
+                                </div>
+
+                                <div className="size-controls">
+                                    <div className="size-control-row">
+                                        <span className="size-label">{t.compare.scale}: {sizeScale}%</span>
+                                        <button className="btn btn-secondary btn-sm" style={{ width: 'auto' }} onClick={handleAutoFit}>{t.compare.autoFit}</button>
+                                    </div>
+                                    <input type="range" className="input-field" value={sizeScale} onChange={(e) => setSizeScale(Number(e.target.value))} min={50} max={200} />
+
+                                    <div className="position-controls mt-2">
+                                        <span className="size-label">{t.compare.microAdjust} (X:{offsetX}, Y:{offsetY})</span>
+                                        <div className="pos-btn-grid">
+                                            <div className="pos-row">
+                                                <button className="pos-btn" onClick={() => setOffsetY(v => v - 1)}>↑</button>
+                                            </div>
+                                            <div className="pos-row">
+                                                <button className="pos-btn" onClick={() => setOffsetX(v => v - 1)}>←</button>
+                                                <button className="pos-btn" style={{ fontWeight: 800 }} onClick={() => { setOffsetX(0); setOffsetY(0); }}>◎</button>
+                                                <button className="pos-btn" onClick={() => setOffsetX(v => v + 1)}>→</button>
+                                            </div>
+                                            <div className="pos-row">
+                                                <button className="pos-btn" onClick={() => setOffsetY(v => v + 1)}>↓</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {compareMode === 'side-by-side' ? (
+                                    <div className="comparison-container">
+                                        <div className="comparison-item">
+                                            <h4><span className="material-symbols-outlined">image</span> {t.compare.original}</h4>
+                                            <div className="image-wrapper"><img src={result.originalImage} alt="Original" /></div>
+                                        </div>
+                                        <div className="comparison-item">
+                                            <h4><span className="material-symbols-outlined">barcode</span> {t.compare.generated}</h4>
+                                            <div className="image-wrapper"><img src={result.generatedBarcode} alt="Generated" style={getScaledStyle()} /></div>
+                                            <p className="barcode-text">{result.recognizedText}</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="overlay-container">
+                                        <div className="overlay-wrapper">
+                                            <div className="overlay-layer original"><img src={result.originalImage} alt="Original" /></div>
+                                            <div className="overlay-layer generated" style={{ opacity: overlayOpacity / 100 }}>
+                                                <img src={result.generatedBarcode} alt="Generated" style={getScaledStyle()} />
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 w-full" style={{ width: '100%' }}>
+                                            <p className="text-center text-muted mb-1">{t.compare.opacity}: {overlayOpacity}%</p>
+                                            <input type="range" className="input-field" value={overlayOpacity} onChange={(e) => setOverlayOpacity(Number(e.target.value))} min={0} max={100} />
+                                        </div>
+                                        <p className="barcode-text">{result.recognizedText}</p>
                                     </div>
                                 )}
-                            </div>
-                            <button className="btn btn-secondary mt-1" onClick={handleManualRegenerate}>
-                                <span className="material-symbols-outlined">refresh</span> {t.compare.btnRegenerate}
-                            </button>
-                        </div>
-                    </section>
-
-                    <section className="section glass-card comparison-section">
-                        <div className="comparison-header">
-                            <h3 className="section-title">{t.compare.compareTitle}</h3>
-                            <div className="compare-mode-toggle">
-                                <button className={`mode-btn ${compareMode === 'side-by-side' ? 'active' : ''}`} onClick={() => setCompareMode('side-by-side')}>{t.compare.modeSide}</button>
-                                <button className={`mode-btn ${compareMode === 'overlay' ? 'active' : ''}`} onClick={() => setCompareMode('overlay')}>{t.compare.modeOverlay}</button>
-                            </div>
-                        </div>
-
-                        <div className="size-controls">
-                            <div className="size-control-row">
-                                <span className="size-label">{t.compare.scale}: {sizeScale}%</span>
-                                <button className="btn btn-secondary btn-sm" style={{ width: 'auto' }} onClick={handleAutoFit}>{t.compare.autoFit}</button>
-                            </div>
-                            <input type="range" className="input-field" value={sizeScale} onChange={(e) => setSizeScale(Number(e.target.value))} min={50} max={200} />
-
-                            <div className="position-controls mt-2">
-                                <span className="size-label">{t.compare.microAdjust} (X:{offsetX}, Y:{offsetY})</span>
-                                <div className="pos-btn-grid">
-                                    <div className="pos-row">
-                                        <button className="pos-btn" onClick={() => setOffsetY(v => v - 1)}>↑</button>
-                                    </div>
-                                    <div className="pos-row">
-                                        <button className="pos-btn" onClick={() => setOffsetX(v => v - 1)}>←</button>
-                                        <button className="pos-btn" style={{ fontWeight: 800 }} onClick={() => { setOffsetX(0); setOffsetY(0); }}>◎</button>
-                                        <button className="pos-btn" onClick={() => setOffsetX(v => v + 1)}>→</button>
-                                    </div>
-                                    <div className="pos-row">
-                                        <button className="pos-btn" onClick={() => setOffsetY(v => v + 1)}>↓</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {compareMode === 'side-by-side' ? (
-                            <div className="comparison-container">
-                                <div className="comparison-item">
-                                    <h4><span className="material-symbols-outlined">image</span> {t.compare.original}</h4>
-                                    <div className="image-wrapper"><img src={result.originalImage} alt="Original" /></div>
-                                </div>
-                                <div className="comparison-item">
-                                    <h4><span className="material-symbols-outlined">barcode</span> {t.compare.generated}</h4>
-                                    <div className="image-wrapper"><img src={result.generatedBarcode} alt="Generated" style={getScaledStyle()} /></div>
-                                    <p className="barcode-text">{result.recognizedText}</p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="overlay-container">
-                                <div className="overlay-wrapper">
-                                    <div className="overlay-layer original"><img src={result.originalImage} alt="Original" /></div>
-                                    <div className="overlay-layer generated" style={{ opacity: overlayOpacity / 100 }}>
-                                        <img src={result.generatedBarcode} alt="Generated" style={getScaledStyle()} />
-                                    </div>
-                                </div>
-                                <div className="mt-2 w-full" style={{ width: '100%' }}>
-                                    <p className="text-center text-muted mb-1">{t.compare.opacity}: {overlayOpacity}%</p>
-                                    <input type="range" className="input-field" value={overlayOpacity} onChange={(e) => setOverlayOpacity(Number(e.target.value))} min={0} max={100} />
-                                </div>
-                                <p className="barcode-text">{result.recognizedText}</p>
-                            </div>
-                        )}
-                    </section>
+                            </section>
+                        </>
+                    )}
 
                     <button className="btn btn-primary mt-2" onClick={handleReset}>{t.compare.uploadNew}</button>
                 </>

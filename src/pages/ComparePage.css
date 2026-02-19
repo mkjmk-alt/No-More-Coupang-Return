@@ -131,6 +131,98 @@
     border-left: 3px solid var(--accent);
 }
 
+/* Dual Recognition Cards */
+.recognition-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.recognition-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    transition: var(--transition);
+    background: var(--bg-secondary);
+}
+
+.recognition-card.success {
+    cursor: pointer;
+}
+
+.recognition-card.success:hover {
+    border-color: var(--accent-light);
+    box-shadow: var(--shadow-medium);
+}
+
+.recognition-card.selected {
+    border-color: var(--accent);
+    background: var(--bg-primary);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.recognition-card.failed {
+    opacity: 0.5;
+}
+
+.recognition-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.recognition-card-icon {
+    font-size: 20px;
+}
+
+.recognition-card-label {
+    font-weight: 700;
+    font-size: 15px;
+    flex: 1;
+}
+
+.recognition-status {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+}
+
+.recognition-status.success {
+    background: #e6fffa;
+    color: #008767;
+}
+
+.recognition-status.failed {
+    background: #fff5f5;
+    color: #c53030;
+}
+
+.recognition-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.recognition-text {
+    font-family: 'Roboto Mono', 'Consolas', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 10px 14px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    word-break: break-all;
+    letter-spacing: 0.5px;
+}
+
+.recognition-format,
+.recognition-confidence {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 /* Comparison UI */
 .comparison-header {
     display: flex;
