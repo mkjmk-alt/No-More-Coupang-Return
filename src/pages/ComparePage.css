@@ -250,6 +250,7 @@
 .overlay-layer img {
     max-width: 100%;
     max-height: 250px;
+    object-fit: contain;
 }
 
 /* Side by Side items */
@@ -280,6 +281,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+}
+
+.image-wrapper img {
+    max-width: 100%;
+    max-height: 250px;
+    height: auto;
+    object-fit: contain;
 }
 
 .barcode-text {

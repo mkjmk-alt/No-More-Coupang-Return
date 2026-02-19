@@ -42,6 +42,32 @@ const getImageDimensions = (dataUrl: string): Promise<ImageDimensions> => {
     });
 };
 
+const MAX_IMAGE_SIZE = 800;
+
+const resizeImage = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const { width, height } = img;
+            if (width <= MAX_IMAGE_SIZE && height <= MAX_IMAGE_SIZE) {
+                resolve(dataUrl);
+                return;
+            }
+            const scale = Math.min(MAX_IMAGE_SIZE / width, MAX_IMAGE_SIZE / height);
+            const newWidth = Math.round(width * scale);
+            const newHeight = Math.round(height * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
+};
+
 export function ComparePage() {
     const { t } = useTranslation();
     const [status, setStatus] = useState<ProcessingStatus>('idle');
@@ -147,7 +173,11 @@ export function ComparePage() {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (ev) => processImage(ev.target?.result as string);
+            reader.onload = async (ev) => {
+                const rawDataUrl = ev.target?.result as string;
+                const resized = await resizeImage(rawDataUrl);
+                processImage(resized);
+            };
             reader.readAsDataURL(file);
         }
     };
