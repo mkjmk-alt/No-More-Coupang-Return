@@ -42,18 +42,19 @@ const getImageDimensions = (dataUrl: string): Promise<ImageDimensions> => {
     });
 };
 
-const MAX_IMAGE_SIZE = 800;
+const MAX_DISPLAY_SIZE = 800;
+const MAX_OCR_SIZE = 1600;
 
-const resizeImage = (dataUrl: string): Promise<string> => {
+const resizeImageTo = (dataUrl: string, maxSize: number, quality = 0.85): Promise<string> => {
     return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
             const { width, height } = img;
-            if (width <= MAX_IMAGE_SIZE && height <= MAX_IMAGE_SIZE) {
+            if (width <= maxSize && height <= maxSize) {
                 resolve(dataUrl);
                 return;
             }
-            const scale = Math.min(MAX_IMAGE_SIZE / width, MAX_IMAGE_SIZE / height);
+            const scale = Math.min(maxSize / width, maxSize / height);
             const newWidth = Math.round(width * scale);
             const newHeight = Math.round(height * scale);
             const canvas = document.createElement('canvas');
@@ -61,7 +62,45 @@ const resizeImage = (dataUrl: string): Promise<string> => {
             canvas.height = newHeight;
             const ctx = canvas.getContext('2d')!;
             ctx.drawImage(img, 0, 0, newWidth, newHeight);
-            resolve(canvas.toDataURL('image/jpeg', 0.85));
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
+};
+
+const preprocessImageForOCR = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d')!;
+
+            // Draw original
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                // Grayscale
+                const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+
+                // Contrast boost (factor 1.5)
+                let enhanced = ((gray - 128) * 1.5) + 128;
+                enhanced = Math.max(0, Math.min(255, enhanced));
+
+                // Binarize (Otsu-like threshold at 128)
+                const binary = enhanced > 128 ? 255 : 0;
+
+                data[i] = binary;
+                data[i + 1] = binary;
+                data[i + 2] = binary;
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
         };
         img.onerror = () => resolve(dataUrl);
         img.src = dataUrl;
@@ -123,17 +162,23 @@ export function ComparePage() {
         return 'CODE128';
     };
 
-    const processImage = async (imageDataUrl: string) => {
+    const processImage = async (displayImageUrl: string, ocrImageUrl: string) => {
         setStatus('recognizing');
         setProgress(0);
         setError('');
 
         try {
-            const originalDimensions = await getImageDimensions(imageDataUrl);
+            const originalDimensions = await getImageDimensions(displayImageUrl);
+
+            // Preprocess image for better OCR accuracy
+            const preprocessed = await preprocessImageForOCR(ocrImageUrl);
+
             const ocrResult = await Tesseract.recognize(
-                imageDataUrl,
+                preprocessed,
                 'eng+kor',
-                { logger: (m) => { if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100)); } }
+                {
+                    logger: (m) => { if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100)); },
+                }
             );
 
             const recognizedText = cleanBarcodeText(ocrResult.data.text);
@@ -155,7 +200,7 @@ export function ComparePage() {
             setGeneratedDimensions(genDimensions);
 
             setResult({
-                originalImage: imageDataUrl,
+                originalImage: displayImageUrl,
                 originalDimensions,
                 recognizedText,
                 generatedBarcode,
@@ -175,8 +220,12 @@ export function ComparePage() {
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 const rawDataUrl = ev.target?.result as string;
-                const resized = await resizeImage(rawDataUrl);
-                processImage(resized);
+                // Display: small for UI, OCR: larger for accuracy
+                const [displayImage, ocrImage] = await Promise.all([
+                    resizeImageTo(rawDataUrl, MAX_DISPLAY_SIZE),
+                    resizeImageTo(rawDataUrl, MAX_OCR_SIZE, 0.92),
+                ]);
+                processImage(displayImage, ocrImage);
             };
             reader.readAsDataURL(file);
         }
